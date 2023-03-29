@@ -7,9 +7,11 @@ import (
 	"os"
 	"path"
 	"log"
+  "fmt"
 
   "github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
+
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -44,10 +46,17 @@ a menu-driven interface to list, select and switch between Kubernetes contexts.`
     }
     survey.AskOne(prompt, &result)
 
-    kubeConfig.CurrentContext = result
-    err = clientcmd.ModifyConfig(configAccess, *kubeConfig, true)
-    if err != nil {
-      log.Fatal("Error %s, modifying config", err.Error())
+    if kubeConfig.CurrentContext != result {
+      kubeConfig.CurrentContext = result
+
+      err = clientcmd.ModifyConfig(configAccess, *kubeConfig, true)
+      if err != nil {
+        log.Fatal("Error %s, modifying config", err.Error())
+      }
+
+      fmt.Printf("✔ Switched to %s!\n", result)
+    } else {
+      fmt.Printf("⚠ You were already working on %s, no need to change.\n", result)
     }
 	},
 }
