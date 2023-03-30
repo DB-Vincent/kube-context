@@ -46,7 +46,16 @@ func ContextSwitcher(cmd *cobra.Command, args []string) {
       Message: "Choose a context:",
       Options: contexts,
   }
-  survey.AskOne(prompt, &result)
+
+  promptErr := survey.AskOne(prompt, &result)
+  if promptErr != nil {
+    if promptErr.Error() == "interrupt" {
+      fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
+      return
+    } else {
+      log.Fatal(promptErr.Error())
+    }
+  }
 
   if kubeConfig.CurrentContext != result {
     kubeConfig.CurrentContext = result
