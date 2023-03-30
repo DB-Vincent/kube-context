@@ -1,4 +1,5 @@
 # kube-context
+![kube-context demo](./demo.gif)
 kube-context is a simple and easy-to-use CLI tool written in Go, which allows you to choose a Kubernetes config in a user-friendly way. It simplifies the process of switching between Kubernetes contexts by providing a menu-driven interface to list, select and switch between Kubernetes contexts.
 
 ## Installation
