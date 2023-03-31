@@ -36,6 +36,12 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+brews:
+  - name: kube-context
+    homepage: https://github.com/DB-Vincent/kube-context
+    tap:
+      owner: DB-Vincent
+      name: kube-context
 
 # The lines beneath this are called `modelines`. See `:help modeline`
 # Feel free to remove those if you don't want/use them.
