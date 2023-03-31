@@ -36,6 +36,8 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+      - ^Merge'
+      - ^maintenance:'
 brews:
   - name: kube-context
     homepage: https://github.com/DB-Vincent/kube-context
