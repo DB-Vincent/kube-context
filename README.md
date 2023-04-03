@@ -1,5 +1,5 @@
 # kube-context
-![kube-context demo](./demo.gif)
+![kube-context demo](./demo/demo.gif)
 kube-context is a simple and easy-to-use CLI tool written in Go, which allows you to choose a Kubernetes config in a user-friendly way. It simplifies the process of switching between Kubernetes contexts by providing a menu-driven interface to list, select and switch between Kubernetes contexts.
 
 ## Installation
@@ -39,6 +39,14 @@ To use kube-context, simply run the kube-context command in your terminal: `kube
 This will display a list of available Kubernetes contexts, which you can select from using the arrow keys and Enter key.
 
 Once you have selected a context, kube-context will switch your current context to the one you selected.
+
+### Renaming a context
+
+![kube-context-rename](./demo/demo-rename.gif)
+
+### Setting a default namespace
+
+![kube-context-rename](./demo/demo-default-namespace.gif)
 
 ## Contributing
 If you want to contribute to kube-context, you can fork the repository and make your changes. Once you are done with your changes, create a pull request and we will review your changes.
