@@ -1,4 +1,4 @@
-module kube-context
+module github.com/DB-Vincent/kube-context
 
 go 1.20
 
