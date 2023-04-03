@@ -15,7 +15,7 @@ brew install DB-Vincent/kube-context
 #### Linux
 ```shell
 mkdir /tmp/kube-context
-wget -qO- https://github.com/DB-Vincent/kube-context/releases/download/v0.2.0/kube-context_Linux_x86_64.tar.gz | tar xvz -C /tmp/kube-context
+wget -qO- https://github.com/DB-Vincent/kube-context/releases/download/v0.2.3/kube-context_Linux_x86_64.tar.gz | tar xvz -C /tmp/kube-context
 mv /tmp/kube-context/kube-context ~/.local/bin/kube-context
 rm -rf /tmp/kube-context
 chmod +x ~/.local/bin/kube-context
@@ -25,7 +25,7 @@ You should now be able to execute the `kube-context` command and switch between 
 
 #### Windows
 ```powershell
-Invoke-WebRequest -Uri https://github.com/DB-Vincent/kube-context/releases/download/v0.2.0/kube-context_Windows_x86_64.zip -OutFile ~\Downloads\kube-context.zip
+Invoke-WebRequest -Uri https://github.com/DB-Vincent/kube-context/releases/download/v0.2.3/kube-context_Windows_x86_64.zip -OutFile ~\Downloads\kube-context.zip
 Expand-Archive ~\Downloads\kube-context.zip -DestinationPath ~\Downloads\kube-context
 Move-Item -Path ~\Downloads\kube-context -Destination ~/Documents/
 ```
