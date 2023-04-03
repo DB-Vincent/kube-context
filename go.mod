@@ -1,5 +1,7 @@
 module github.com/DB-Vincent/kube-context
 
+replace kube-context => github.com/DB-Vincent/kube-context v0.2.1
+
 go 1.20
 
 require (
