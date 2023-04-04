@@ -26,13 +26,13 @@ var setDefaultNamespaceCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 		if err != nil {
-      log.Fatal(err.Error())
-    }
+			log.Fatal(err.Error())
+		}
 
 		kubeConfig, err := clientcmd.LoadFromFile(kubeConfigPath)
 		if err != nil {
-      log.Fatal(err.Error())
-    }
+			log.Fatal(err.Error())
+		}
 
 		configAccess := clientcmd.NewDefaultPathOptions()
 		namespaces := []string{}
