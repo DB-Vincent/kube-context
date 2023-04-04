@@ -25,12 +25,17 @@ var setDefaultNamespaceCmd = &cobra.Command{
 	Short: "Change a context's default namespace",
 	Run: func(cmd *cobra.Command, args []string) {
 		config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+		if err != nil {
+      log.Fatal(err.Error())
+    }
+
 		kubeConfig, err := clientcmd.LoadFromFile(kubeConfigPath)
+		if err != nil {
+      log.Fatal(err.Error())
+    }
+
 		configAccess := clientcmd.NewDefaultPathOptions()
 		namespaces := []string{}
-		if err != nil {
-			log.Fatal(err.Error())
-		}
 
 		clientset, err := kubernetes.NewForConfig(config)
 		if err != nil {
@@ -44,7 +49,7 @@ var setDefaultNamespaceCmd = &cobra.Command{
 
 		response, err := http.Get(connectionUrl)
 		if err != nil {
-			fmt.Printf("❌ An error occured while connecting to the API endpoint for \"%s\" (%s)!\nError: %s\n", currentClusterName, connectionUrl, err.Error())
+			fmt.Printf("❌ An error occurred while connecting to the API endpoint for \"%s\" (%s)!\nError: %s\n", currentClusterName, connectionUrl, err.Error())
 			return
 		} else {
 			if response.StatusCode != 401 { // We can expect to be hit with an "Unauthorized" message, this *should* be fine.
