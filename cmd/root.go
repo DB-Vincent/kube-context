@@ -4,12 +4,12 @@ Copyright © 2023 Vincent De Borger <hello@vincentdeborger.be>
 package cmd
 
 import (
+	"fmt"
+	"log"
 	"os"
 	"path"
-	"log"
-  "fmt"
 
-  "github.com/AlecAivazis/survey/v2"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -34,45 +34,45 @@ func SetVersionInfo(version, commit, date string) {
 var kubeConfigPath string
 
 func ContextSwitcher(cmd *cobra.Command, args []string) {
-  kubeConfig, err := clientcmd.LoadFromFile(kubeConfigPath)
-  configAccess := clientcmd.NewDefaultPathOptions()
-  contexts := []string{}
-  if err != nil {
-    log.Fatal(err)
-  }
+	kubeConfig, err := clientcmd.LoadFromFile(kubeConfigPath)
+	configAccess := clientcmd.NewDefaultPathOptions()
+	contexts := []string{}
+	if err != nil {
+		log.Fatal(err)
+	}
 
-  for name := range kubeConfig.Contexts {
-    contexts = append(contexts, name,)
-  }
+	for name := range kubeConfig.Contexts {
+		contexts = append(contexts, name)
+	}
 
-  result := ""
-  prompt := &survey.Select{
-      Message: "Choose a context:",
-      Options: contexts,
-  }
+	result := ""
+	prompt := &survey.Select{
+		Message: "Choose a context:",
+		Options: contexts,
+	}
 
-  promptErr := survey.AskOne(prompt, &result)
-  if promptErr != nil {
-    if promptErr.Error() == "interrupt" {
-      fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
-      return
-    } else {
-      log.Fatal(promptErr.Error())
-    }
-  }
+	promptErr := survey.AskOne(prompt, &result)
+	if promptErr != nil {
+		if promptErr.Error() == "interrupt" {
+			fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
+			return
+		} else {
+			log.Fatal(promptErr.Error())
+		}
+	}
 
-  if kubeConfig.CurrentContext != result {
-    kubeConfig.CurrentContext = result
+	if kubeConfig.CurrentContext != result {
+		kubeConfig.CurrentContext = result
 
-    err = clientcmd.ModifyConfig(configAccess, *kubeConfig, true)
-    if err != nil {
-      log.Fatal("Error %s, modifying config", err.Error())
-    }
+		err = clientcmd.ModifyConfig(configAccess, *kubeConfig, true)
+		if err != nil {
+			log.Fatal("Error %s, modifying config", err.Error())
+		}
 
-    fmt.Printf("✔ Switched to %s!\n", result)
-  } else {
-    fmt.Printf("⚠ You were already working on %s, no need to change.\n", result)
-  }
+		fmt.Printf("✔ Switched to %s!\n", result)
+	} else {
+		fmt.Printf("⚠ You were already working on %s, no need to change.\n", result)
+	}
 }
 
 func Execute() {
@@ -83,12 +83,10 @@ func Execute() {
 }
 
 func init() {
-  home, err := os.UserHomeDir()
-  if err != nil {
-    log.Fatal(err)
-  }
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	rootCmd.PersistentFlags().StringVar(&kubeConfigPath, "config", path.Join(home, ".kube/config"), "Kubeconfig file location")
 }
-
-
