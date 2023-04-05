@@ -5,17 +5,15 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"context"
 	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/DB-Vincent/kube-context/utils"
 	"github.com/spf13/cobra"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -24,26 +22,24 @@ var setDefaultNamespaceCmd = &cobra.Command{
 	Use:   "set-default-namespace",
 	Short: "Change a context's default namespace",
 	Run: func(cmd *cobra.Command, args []string) {
-		config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
+		opts := &utils.KubeConfigOptions{}
 
-		kubeConfig, err := clientcmd.LoadFromFile(kubeConfigPath)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-
+		// Initialize environment (retrieve config from file, create clientset)
+		opts.Init(kubeConfigPath)
 		configAccess := clientcmd.NewDefaultPathOptions()
-		namespaces := []string{}
 
-		clientset, err := kubernetes.NewForConfig(config)
+		// Retrieve contexts from kubeconfig file
+		opts.GetContexts()
+
+		// Retrieve namespaces for current context
+		err := opts.GetNamespaces()
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 
-		currentClusterName := kubeConfig.Contexts[kubeConfig.CurrentContext].Cluster
-		connectionUrl := kubeConfig.Clusters[currentClusterName].Server
+		// Retrieve connection URL and test connectivity
+		currentClusterName := opts.Config.Contexts[opts.CurrentContext].Cluster
+		connectionUrl := opts.Config.Clusters[currentClusterName].Server
 
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
@@ -59,19 +55,11 @@ var setDefaultNamespaceCmd = &cobra.Command{
 		}
 		response.Body.Close()
 
-		namespaceList, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-
-		for _, n := range namespaceList.Items {
-			namespaces = append(namespaces, n.Name)
-		}
-
+		// Display namespace selection prompt to user
 		selectedNamespace := ""
 		prompt := &survey.Select{
-			Message: fmt.Sprintf("Choose a default namespace for the \"%s\" context:", kubeConfig.CurrentContext),
-			Options: namespaces,
+			Message: fmt.Sprintf("Choose a default namespace for the \"%s\" context:", opts.CurrentContext),
+			Options: opts.Namespaces,
 		}
 
 		promptErr := survey.AskOne(prompt, &selectedNamespace)
@@ -84,16 +72,17 @@ var setDefaultNamespaceCmd = &cobra.Command{
 			}
 		}
 
+		// Change namespace in kubeconfig to selected namespace
 		fmt.Printf("ℹ Setting the default namespace to \"%s\"..\n", selectedNamespace)
-		context, _ := kubeConfig.Contexts[kubeConfig.CurrentContext]
+		context, _ := opts.Config.Contexts[opts.CurrentContext]
 		context.Namespace = selectedNamespace
-		err = clientcmd.ModifyConfig(configAccess, *kubeConfig, true)
+		err = clientcmd.ModifyConfig(configAccess, *opts.Config, true)
 		if err != nil {
 			log.Fatal("Error %s, modifying config", err.Error())
 			return
 		}
 
-		fmt.Printf("✔ Successfully set the default namespace for \"%s\" to \"%s\"!\n", kubeConfig.CurrentContext, selectedNamespace)
+		fmt.Printf("✔ Successfully set the default namespace for \"%s\" to \"%s\"!\n", opts.CurrentContext, selectedNamespace)
 	},
 }
 

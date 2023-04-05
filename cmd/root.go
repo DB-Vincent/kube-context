@@ -10,6 +10,7 @@ import (
 	"path"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/DB-Vincent/kube-context/utils"
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -34,21 +35,19 @@ func SetVersionInfo(version, commit, date string) {
 var kubeConfigPath string
 
 func ContextSwitcher(cmd *cobra.Command, args []string) {
-	kubeConfig, err := clientcmd.LoadFromFile(kubeConfigPath)
-	configAccess := clientcmd.NewDefaultPathOptions()
-	contexts := []string{}
-	if err != nil {
-		log.Fatal(err)
-	}
+	opts := &utils.KubeConfigOptions{}
 
-	for name := range kubeConfig.Contexts {
-		contexts = append(contexts, name)
-	}
+	// Initialize environment (retrieve config from file, create clientset)
+	opts.Init(kubeConfigPath)
+	configAccess := clientcmd.NewDefaultPathOptions()
+
+	// Retrieve contexts from kubeconfig file
+	opts.GetContexts()
 
 	result := ""
 	prompt := &survey.Select{
 		Message: "Choose a context:",
-		Options: contexts,
+		Options: opts.Contexts,
 	}
 
 	promptErr := survey.AskOne(prompt, &result)
@@ -61,10 +60,10 @@ func ContextSwitcher(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if kubeConfig.CurrentContext != result {
-		kubeConfig.CurrentContext = result
+	if opts.CurrentContext != result {
+		opts.Config.CurrentContext = result
 
-		err = clientcmd.ModifyConfig(configAccess, *kubeConfig, true)
+		err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
 		if err != nil {
 			log.Fatal("Error %s, modifying config", err.Error())
 		}

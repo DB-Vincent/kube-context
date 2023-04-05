@@ -9,6 +9,7 @@ import (
 	"log"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/DB-Vincent/kube-context/utils"
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -19,24 +20,21 @@ var renameCmd = &cobra.Command{
 	Use:   "rename",
 	Short: "Change a context's name",
 	Run: func(cmd *cobra.Command, args []string) {
-		kubeConfig, err := clientcmd.LoadFromFile(kubeConfigPath)
+		opts := &utils.KubeConfigOptions{}
+
+		// Initialize environment (retrieve config from file, create clientset)
+		opts.Init(kubeConfigPath)
 		configAccess := clientcmd.NewDefaultPathOptions()
-		contexts := []string{}
 
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		for name := range kubeConfig.Contexts {
-			contexts = append(contexts, name)
-		}
+		// Retrieve contexts from kubeconfig file
+		opts.GetContexts()
 
 		var qs = []*survey.Question{
 			{
 				Name: "oldContext",
 				Prompt: &survey.Select{
 					Message: "Choose a context to rename:",
-					Options: contexts,
+					Options: opts.Contexts,
 				},
 			},
 			{
@@ -51,7 +49,7 @@ var renameCmd = &cobra.Command{
 			NewContext string `survey:"newContext"`
 		}{}
 
-		err = survey.Ask(qs, &answers)
+		err := survey.Ask(qs, &answers)
 		if err != nil {
 			if err.Error() == "interrupt" {
 				fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
@@ -61,8 +59,8 @@ var renameCmd = &cobra.Command{
 			}
 		}
 
-		context, _ := kubeConfig.Contexts[answers.OldContext]
-		_, newExists := kubeConfig.Contexts[answers.NewContext]
+		context, _ := opts.Config.Contexts[answers.OldContext]
+		_, newExists := opts.Config.Contexts[answers.NewContext]
 		if newExists {
 			fmt.Printf("❌ There's already a context with that name. Please give me a different name.\n")
 			return
@@ -70,14 +68,14 @@ var renameCmd = &cobra.Command{
 
 		fmt.Printf("ℹ Renaming %s to %s..\n", answers.OldContext, answers.NewContext)
 
-		kubeConfig.Contexts[answers.NewContext] = context
-		delete(kubeConfig.Contexts, answers.OldContext)
+		opts.Config.Contexts[answers.NewContext] = context
+		delete(opts.Config.Contexts, answers.OldContext)
 
-		if kubeConfig.CurrentContext == answers.OldContext {
-			kubeConfig.CurrentContext = answers.NewContext
+		if opts.CurrentContext == answers.OldContext {
+			opts.Config.CurrentContext = answers.NewContext
 		}
 
-		err = clientcmd.ModifyConfig(configAccess, *kubeConfig, true)
+		err = clientcmd.ModifyConfig(configAccess, *opts.Config, true)
 		if err != nil {
 			log.Fatal("Error %s, modifying config", err.Error())
 			return
