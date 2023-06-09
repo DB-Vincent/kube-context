@@ -4,10 +4,8 @@ Copyright © 2023 Vincent De Borger <hello@vincentdeborger.be>
 package cmd
 
 import (
-	"crypto/tls"
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/DB-Vincent/kube-context/utils"
@@ -36,23 +34,10 @@ var setDefaultNamespaceCmd = &cobra.Command{
 			log.Fatal(err.Error())
 		}
 
-		// Retrieve connection URL and test connectivity
-		currentClusterName := opts.Config.Contexts[opts.CurrentContext].Cluster
-		connectionUrl := opts.Config.Clusters[currentClusterName].Server
-
-		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-		response, err := http.Get(connectionUrl)
+		_, err = opts.GetClusterUrl()
 		if err != nil {
-			fmt.Printf("❌ An error occurred while connecting to the API endpoint for \"%s\" (%s)!\nError: %s\n", currentClusterName, connectionUrl, err.Error())
-			return
-		} else {
-			if response.StatusCode != 401 { // We can expect to be hit with an "Unauthorized" message, this *should* be fine.
-				fmt.Printf("❌ Couldn't connect to the API endpoint for \"%s\" (%s)!\n", currentClusterName, connectionUrl)
-				return
-			}
+			fmt.Printf("❌ An error occurred while connecting to the API endpoint!\nError: %s\n", err.Error())
 		}
-		response.Body.Close()
 
 		// Display namespace selection prompt to user
 		selectedNamespace := ""
