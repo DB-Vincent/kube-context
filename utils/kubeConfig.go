@@ -8,6 +8,7 @@ import (
 
 type KubeConfigOptions struct {
 	Namespaces     []string
+	Pods					 []string
 	Contexts       []string
 	CurrentContext string
 

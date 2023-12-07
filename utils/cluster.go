@@ -24,6 +24,21 @@ func (opts *KubeConfigOptions) GetNamespaces() error {
 	return nil
 }
 
+func (opts *KubeConfigOptions) GetPods() error {
+	var err error
+
+	podList, err := opts.Client.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, pod := range podList.Items {
+		opts.Pods = append(opts.Pods, pod.Name)
+	}
+
+	return nil
+}
+
 func (opts *KubeConfigOptions) GetClusterUrl() (string, error) {
 	var err error
 
