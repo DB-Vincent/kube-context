@@ -8,7 +8,7 @@ Please note that kube-context requires the gcc package to be installed, so pleas
 
 ```shell
 brew tap DB-Vincent/kube-context https://github.com/DB-Vincent/kube-context
-brew install DB-Vincent/kube-context
+brew install DB-Vincent/kube-context/kube-context
 ```
 
 ### Manual
