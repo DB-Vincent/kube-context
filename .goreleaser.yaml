@@ -41,7 +41,7 @@ changelog:
 brews:
   - name: kube-context
     homepage: https://github.com/DB-Vincent/kube-context
-    tap:
+    repository:
       owner: DB-Vincent
       name: kube-context
 # The lines beneath this are called `modelines`. See `:help modeline`
