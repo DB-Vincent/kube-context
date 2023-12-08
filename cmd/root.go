@@ -115,7 +115,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	rootCmd.Flags().StringVarP(&context, "context", "c", "", "Name of context to which you want to switch")
+	rootCmd.Flags().StringVarP(&context, "context", "c", "", "name of context to which you want to switch")
 
-	rootCmd.PersistentFlags().StringVar(&kubeConfigPath, "config", path.Join(home, ".kube/config"), "Kubeconfig file location")
+	rootCmd.PersistentFlags().StringVar(&kubeConfigPath, "config", path.Join(home, ".kube/config"), "kubeconfig file location")
 }

@@ -103,5 +103,5 @@ var setDefaultNamespaceCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(setDefaultNamespaceCmd)
 
-	setDefaultNamespaceCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "Name of namespace you want to set as default")
+	setDefaultNamespaceCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "name of namespace you want to set as default")
 }

@@ -121,6 +121,6 @@ var renameCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(renameCmd)
 
-	renameCmd.Flags().StringVarP(&contextFrom, "from", "f", "", "Name of context which you want to rename")
-	renameCmd.Flags().StringVarP(&contextTo, "to", "t", "", "New name of the context")
+	renameCmd.Flags().StringVarP(&contextFrom, "from", "f", "", "name of context which you want to rename")
+	renameCmd.Flags().StringVarP(&contextTo, "to", "t", "", "new name of the context")
 }

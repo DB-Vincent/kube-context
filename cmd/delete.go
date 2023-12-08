@@ -105,5 +105,5 @@ var deleteCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(deleteCmd)
 
-	deleteCmd.Flags().StringVarP(&context, "context", "c", "", "Name of context which you want to delete")
+	deleteCmd.Flags().StringVarP(&context, "context", "c", "", "name of context which you want to delete")
 }
