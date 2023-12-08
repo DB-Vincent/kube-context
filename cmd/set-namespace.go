@@ -35,7 +35,7 @@ var namespace string
 
 // setDefaultNamespaceCmd represents the setNamespace command
 var setDefaultNamespaceCmd = &cobra.Command{
-	Use:   "set-default-namespace",
+	Use:   "set-namespace",
 	Short: "Change a context's default namespace",
 	Run: func(cmd *cobra.Command, args []string) {
 		opts := &utils.KubeConfigOptions{}
