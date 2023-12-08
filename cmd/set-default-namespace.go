@@ -21,6 +21,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"slices"
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
@@ -29,6 +30,8 @@ import (
 
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+var namespace string
 
 // setDefaultNamespaceCmd represents the setNamespace command
 var setDefaultNamespaceCmd = &cobra.Command{
@@ -44,34 +47,45 @@ var setDefaultNamespaceCmd = &cobra.Command{
 		// Retrieve contexts from kubeconfig file
 		opts.GetContexts()
 
-		// Retrieve namespaces for current context
-		err := opts.GetNamespaces()
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-
-		_, err = opts.GetClusterUrl()
+		// Check connectivity
+		_, err := opts.GetClusterUrl()
 		if err != nil {
 			fmt.Printf("❌ An error occurred while connecting to the API endpoint!\nError: %s\n", err.Error())
 		}
 
-		// Display namespace selection prompt to user
+		// Retrieve namespaces for current context
+		err = opts.GetNamespaces()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
 		selectedNamespace := ""
-		prompt := &survey.Select{
-			Message: fmt.Sprintf("Choose a default namespace for the %s context:", opts.CurrentContext),
-			Options: opts.Namespaces,
-		}
-
-		promptErr := survey.AskOne(prompt, &selectedNamespace)
-		if promptErr != nil {
-			if promptErr.Error() == "interrupt" {
-				fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
-				return
-			} else {
-				log.Fatal(promptErr.Error())
+		if (namespace == "") {
+			// Display namespace selection prompt to user
+			prompt := &survey.Select{
+				Message: fmt.Sprintf("Choose a default namespace for the %s context:", opts.CurrentContext),
+				Options: opts.Namespaces,
 			}
-		}
 
+			promptErr := survey.AskOne(prompt, &selectedNamespace)
+			if promptErr != nil {
+				if promptErr.Error() == "interrupt" {
+					fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
+					return
+				} else {
+					log.Fatal(promptErr.Error())
+				}
+			}
+		} else {
+			if (!slices.Contains(opts.Namespaces, namespace)) {
+				fmt.Printf("❌ Could not find namespace in cluster!\n")
+				fmt.Printf("ℹ Found the following namespaces in your current cluster: %q\n", opts.Namespaces)
+				return
+			}
+
+			selectedNamespace = namespace
+		}
+		
 		// Change namespace in kubeconfig to selected namespace
 		fmt.Printf("ℹ Setting the default namespace to %s..\n", color.FgCyan.Render(selectedNamespace))
 		context, _ := opts.Config.Contexts[opts.CurrentContext]
@@ -88,4 +102,6 @@ var setDefaultNamespaceCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(setDefaultNamespaceCmd)
+
+	setDefaultNamespaceCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "Name of namespace you want to set as default")
 }

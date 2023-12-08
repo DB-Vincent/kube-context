@@ -21,6 +21,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"slices"
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
@@ -46,38 +47,41 @@ var deleteCmd = &cobra.Command{
 		configAccess := clientcmd.NewDefaultPathOptions()
 
 		// Selection of context to delete
-		var qs = []*survey.Question{
-			{
-				Name: "contextToDelete",
-				Prompt: &survey.Select{
-					Message: "Choose a context to delete:",
-					Options: opts.Contexts,
-				},
-			},
-		}
+		contextToDelete := ""
 
-		answers := struct {
-			ContextToDelete string `survey:"contextToDelete"`
-		}{}
-
-		err := survey.Ask(qs, &answers)
-		if err != nil {
-			if err.Error() == "interrupt" {
-				fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
-				return
-			} else {
-				log.Fatal(err.Error())
+		if (context == "") {
+			prompt := &survey.Select{
+				Message: "Choose a context to delete:",
+				Options: opts.Contexts,
 			}
+		
+			err := survey.AskOne(prompt, &contextToDelete)
+			if err != nil {
+				if err.Error() == "interrupt" {
+					fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
+					return
+				} else {
+					log.Fatal(err.Error())
+				}
+			}		
+		} else {
+			if (!slices.Contains(opts.Contexts, context)) {
+				fmt.Printf("❌ Could not find context in kubeconfig file!\n")
+				fmt.Printf("ℹ Found the following contexts in your kubeconfig file: %q\n", opts.Contexts)
+				return
+			}
+	
+			contextToDelete = context
 		}
-
-		fmt.Printf("ℹ Deleting context %s from kubeconfig file..\n", color.FgCyan.Render(answers.ContextToDelete))
+		
+		fmt.Printf("ℹ Deleting context %s from kubeconfig file..\n", color.FgCyan.Render(contextToDelete))
 
 		// Remove context from list of contexts
-		delete(opts.Config.Contexts, answers.ContextToDelete)
+		delete(opts.Config.Contexts, contextToDelete)
 
 		var firstContext string
 
-		if opts.CurrentContext == answers.ContextToDelete {
+		if opts.CurrentContext == contextToDelete {
 			for context, _ := range opts.Config.Contexts {
         firstContext = context
         break
@@ -88,16 +92,18 @@ var deleteCmd = &cobra.Command{
 		}
 
 		// Write new context list to kubeconfig file
-		err = clientcmd.ModifyConfig(configAccess, *opts.Config, true)
+		err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
 		if err != nil {
 			log.Fatal("Error %s, modifying config", err.Error())
 			return
 		}
 
-		fmt.Printf("✔ Successfully deleted context %s!\n", color.FgCyan.Render(answers.ContextToDelete))
+		fmt.Printf("✔ Successfully deleted context %s!\n", color.FgCyan.Render(contextToDelete))
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
+
+	deleteCmd.Flags().StringVarP(&context, "context", "c", "", "Name of context which you want to delete")
 }

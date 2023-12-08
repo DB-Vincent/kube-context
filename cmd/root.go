@@ -23,6 +23,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"slices"
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
@@ -49,6 +50,7 @@ func SetVersionInfo(version, commit, date string) {
 }
 
 var kubeConfigPath string
+var context string
 
 func ContextSwitcher(cmd *cobra.Command, args []string) {
 	opts := &utils.KubeConfigOptions{}
@@ -61,21 +63,31 @@ func ContextSwitcher(cmd *cobra.Command, args []string) {
 	opts.GetContexts()
 
 	result := ""
-	prompt := &survey.Select{
-		Message: "Choose a context:",
-		Options: opts.Contexts,
-	}
-
-	promptErr := survey.AskOne(prompt, &result)
-	if promptErr != nil {
-		if promptErr.Error() == "interrupt" {
-			fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
-			return
-		} else {
-			log.Fatal(promptErr.Error())
+	if (context == "") {
+		prompt := &survey.Select{
+			Message: "Choose a context:",
+			Options: opts.Contexts,
 		}
-	}
+	
+		promptErr := survey.AskOne(prompt, &result)
+		if promptErr != nil {
+			if promptErr.Error() == "interrupt" {
+				fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
+				return
+			} else {
+				log.Fatal(promptErr.Error())
+			}
+		}	
+	} else {
+		if (!slices.Contains(opts.Contexts, context)) {
+			fmt.Printf("❌ Could not find context in kubeconfig file!\n")
+			fmt.Printf("ℹ Found the following contexts in your kubeconfig file: %q\n", opts.Contexts)
+			return
+		}
 
+		result = context
+	}
+	
 	if opts.CurrentContext != result {
 		opts.Config.CurrentContext = result
 
@@ -102,6 +114,8 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	rootCmd.Flags().StringVarP(&context, "context", "c", "", "Name of context to which you want to switch")
 
 	rootCmd.PersistentFlags().StringVar(&kubeConfigPath, "config", path.Join(home, ".kube/config"), "Kubeconfig file location")
 }
