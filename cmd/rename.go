@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/DB-Vincent/kube-context/utils"
 	"github.com/spf13/cobra"
@@ -80,7 +81,7 @@ var renameCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("ℹ Renaming %s to %s..\n", answers.OldContext, answers.NewContext)
+		fmt.Printf("ℹ Renaming %s context to %s..\n", color.FgCyan.Render(answers.OldContext), color.FgCyan.Render(answers.NewContext))
 
 		opts.Config.Contexts[answers.NewContext] = context
 		delete(opts.Config.Contexts, answers.OldContext)
@@ -95,7 +96,7 @@ var renameCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("✔ Successfully renamed %s to %s!\n", answers.OldContext, answers.NewContext)
+		fmt.Printf("✔ Successfully renamed %s context to %s!\n", color.FgCyan.Render(answers.OldContext), color.FgCyan.Render(answers.NewContext))
 	},
 }
 

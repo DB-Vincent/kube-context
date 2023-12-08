@@ -24,6 +24,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/DB-Vincent/kube-context/utils"
 	"github.com/spf13/cobra"
@@ -83,9 +84,9 @@ func ContextSwitcher(cmd *cobra.Command, args []string) {
 			log.Fatal("Error %s, modifying config", err.Error())
 		}
 
-		fmt.Printf("✔ Switched to %s!\n", result)
+		fmt.Printf("✔ Switched to %s!\n", color.FgCyan.Render(result))
 	} else {
-		fmt.Printf("⚠ You were already working on %s, no need to change.\n", result)
+		fmt.Printf("⚠ You were already working on %s, no need to change.\n", color.FgCyan.Render(result))
 	}
 }
 

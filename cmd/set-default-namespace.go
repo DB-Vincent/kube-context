@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/DB-Vincent/kube-context/utils"
 	"github.com/spf13/cobra"
@@ -57,7 +58,7 @@ var setDefaultNamespaceCmd = &cobra.Command{
 		// Display namespace selection prompt to user
 		selectedNamespace := ""
 		prompt := &survey.Select{
-			Message: fmt.Sprintf("Choose a default namespace for the \"%s\" context:", opts.CurrentContext),
+			Message: fmt.Sprintf("Choose a default namespace for the %s context:", opts.CurrentContext),
 			Options: opts.Namespaces,
 		}
 
@@ -72,7 +73,7 @@ var setDefaultNamespaceCmd = &cobra.Command{
 		}
 
 		// Change namespace in kubeconfig to selected namespace
-		fmt.Printf("ℹ Setting the default namespace to \"%s\"..\n", selectedNamespace)
+		fmt.Printf("ℹ Setting the default namespace to %s..\n", color.FgCyan.Render(selectedNamespace))
 		context, _ := opts.Config.Contexts[opts.CurrentContext]
 		context.Namespace = selectedNamespace
 		err = clientcmd.ModifyConfig(configAccess, *opts.Config, true)
@@ -81,7 +82,7 @@ var setDefaultNamespaceCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("✔ Successfully set the default namespace for \"%s\" to \"%s\"!\n", opts.CurrentContext, selectedNamespace)
+		fmt.Printf("✔ Successfully set the default namespace for %s to %s!\n", color.FgCyan.Render(opts.CurrentContext), color.FgCyan.Render(selectedNamespace))
 	},
 }
 

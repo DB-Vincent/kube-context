@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/DB-Vincent/kube-context/utils"
 	"github.com/spf13/cobra"
@@ -69,7 +70,7 @@ var deleteCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Printf("Deleting %s..\n", answers.ContextToDelete)
+		fmt.Printf("ℹ Deleting context %s from kubeconfig file..\n", color.FgCyan.Render(answers.ContextToDelete))
 
 		// Remove context from list of contexts
 		delete(opts.Config.Contexts, answers.ContextToDelete)
@@ -82,7 +83,7 @@ var deleteCmd = &cobra.Command{
         break
     }
 
-			fmt.Printf("ℹ You're currently using the context you want to delete, I'll switch you to the %s context..\n", firstContext)
+			fmt.Printf("ℹ You're currently using the context you want to delete, I'll switch you to the %s context..\n", color.FgCyan.Render(firstContext))
 			opts.Config.CurrentContext = firstContext
 		}
 
@@ -93,7 +94,7 @@ var deleteCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("✔ Successfully deleted context \"%s\"!\n", answers.ContextToDelete)
+		fmt.Printf("✔ Successfully deleted context %s!\n", color.FgCyan.Render(answers.ContextToDelete))
 	},
 }
 
