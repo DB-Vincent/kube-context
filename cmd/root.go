@@ -36,12 +36,9 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "kube-context",
-	Short: "A simple Go tool to switch between Kubernetes contexts in a user-friendly way",
-	Long: `Kube-context is a simple and easy-to-use CLI tool written in Go,
-which allows you to choose a Kubernetes config in a user-friendly way.
-
-It simplifies the process of switching between Kubernetes contexts by providing
-a menu-driven interface to list, select and switch between Kubernetes contexts.`,
+	Short: "A simple Go tool to manage Kubernetes contexts in a user-friendly way",
+	Long: `kube-context is a command-line interface (CLI) tool designed to simplify the management of Kubernetes contexts, allowing users to seamlessly switch between different Kubernetes clusters with ease. 
+Whether you are working on multiple projects or interacting with various Kubernetes environments, kube-context provides essential functionality to streamline context management.`,
 	Run: ContextSwitcher,
 }
 
