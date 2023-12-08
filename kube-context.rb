@@ -5,20 +5,20 @@
 class KubeContext < Formula
   desc ""
   homepage "https://github.com/DB-Vincent/kube-context"
-  version "0.2.4"
+  version "0.2.5"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/DB-Vincent/kube-context/releases/download/v0.2.4/kube-context_Darwin_arm64.tar.gz"
-      sha256 "488586b149b398ae2733a7ed1990efd7093db06b17e87044e6562067424655e6"
+      url "https://github.com/DB-Vincent/kube-context/releases/download/v0.2.5/kube-context_Darwin_arm64.tar.gz"
+      sha256 "1cd308a8edb0892778180229c72d35cd5da4552c6f3685941a63309641bf9d28"
 
       def install
         bin.install "kube-context"
       end
     end
     if Hardware::CPU.intel?
-      url "https://github.com/DB-Vincent/kube-context/releases/download/v0.2.4/kube-context_Darwin_x86_64.tar.gz"
-      sha256 "8684362afcc6e89e1885cca166bf15a4244df2e6b238bf6a82c123b9454eb762"
+      url "https://github.com/DB-Vincent/kube-context/releases/download/v0.2.5/kube-context_Darwin_x86_64.tar.gz"
+      sha256 "9e738ed173a5f8ad1df435613b7b8e6f2fe490c8176ca6dcc223f37cf13b6764"
 
       def install
         bin.install "kube-context"
@@ -28,16 +28,16 @@ class KubeContext < Formula
 
   on_linux do
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/DB-Vincent/kube-context/releases/download/v0.2.4/kube-context_Linux_arm64.tar.gz"
-      sha256 "e2e5d028adf5b5b0176a76a1e8df95c384b3aab780a67f9d9e4a592bbb7df65d"
+      url "https://github.com/DB-Vincent/kube-context/releases/download/v0.2.5/kube-context_Linux_arm64.tar.gz"
+      sha256 "d782c1ee1aad07bab48deeb22f49be343a5139c0e173eecfb29d64ace112030b"
 
       def install
         bin.install "kube-context"
       end
     end
     if Hardware::CPU.intel?
-      url "https://github.com/DB-Vincent/kube-context/releases/download/v0.2.4/kube-context_Linux_x86_64.tar.gz"
-      sha256 "b56cc6347767fb5be89a4da5b1b62530858b3630a0f87df17cc6adeb0747bc35"
+      url "https://github.com/DB-Vincent/kube-context/releases/download/v0.2.5/kube-context_Linux_x86_64.tar.gz"
+      sha256 "c2cb73e33a2179b6b8f21824317ac6546f3dc7ae24509b56792fb8584d150fd2"
 
       def install
         bin.install "kube-context"
