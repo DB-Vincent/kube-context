@@ -19,6 +19,7 @@
 package cmd
 
 import (
+	"os"
 	"fmt"
 	"log"
 	"slices"
@@ -29,81 +30,111 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"
+	api "k8s.io/client-go/tools/clientcmd/api"
 )
-
-// deleteCmd represents the rename command
+ 
+// deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Remove a context from your kubeconfig",
-	Run: func(cmd *cobra.Command, args []string) {
-		opts := &utils.KubeConfigOptions{}
+	Run:   runDeleteCommand,
+}
+ 
+// Main logic for delete command
+func runDeleteCommand(cmd *cobra.Command, args []string) {
+	// Initialize configuration struct
+	opts := &utils.KubeConfigOptions{}
+	opts.Init(kubeConfigPath)
 
-		// Initialize environment (retrieve config from file, create clientset)
-		opts.Init(kubeConfigPath)
-		// configAccess := clientcmd.NewDefaultPathOptions()
+	// Retrieve contexts and set up configAccess so we can write the adjusted configuration
+	opts.GetContexts()
+	configAccess := clientcmd.NewDefaultPathOptions()
 
-		// Retrieve contexts from kubeconfig file
-		opts.GetContexts()
-		configAccess := clientcmd.NewDefaultPathOptions()
+	// Prompt the user to select a context to delete
+	contextToDelete, err := selectContextToDelete(opts)
+	if err != nil {
+		log.Fatalf("Error selecting context to delete: %s", err)
+		return
+	}
 
-		// Selection of context to delete
-		contextToDelete := ""
+	// Remove selected context from kubeconfig
+	err = deleteContext(opts, contextToDelete)
+	if err != nil {
+		log.Fatalf("Error deleting context: %s", err)
+		return
+	}
 
-		if (context == "") {
-			prompt := &survey.Select{
-				Message: "Choose a context to delete:",
-				Options: opts.Contexts,
-			}
-		
-			err := survey.AskOne(prompt, &contextToDelete)
-			if err != nil {
-				if err.Error() == "interrupt" {
-					fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
-					return
-				} else {
-					log.Fatal(err.Error())
-				}
-			}		
-		} else {
-			if (!slices.Contains(opts.Contexts, context)) {
-				fmt.Printf("❌ Could not find context in kubeconfig file!\n")
-				fmt.Printf("ℹ Found the following contexts in your kubeconfig file: %q\n", opts.Contexts)
-				return
-			}
-	
-			contextToDelete = context
-		}
-		
-		fmt.Printf("ℹ Deleting context %s from kubeconfig file..\n", color.FgCyan.Render(contextToDelete))
+	// Write modified configuration to kubeconfig file
+	err = clientcmd.ModifyConfig(configAccess, *opts.Config, true)
+	if err != nil {
+		log.Fatalf("Error updating kubeconfig file: %s", err)
+		return
+	}
 
-		// Remove context from list of contexts
-		delete(opts.Config.Contexts, contextToDelete)
-
-		var firstContext string
-
-		if opts.CurrentContext == contextToDelete {
-			for context, _ := range opts.Config.Contexts {
-        firstContext = context
-        break
-    }
-
-			fmt.Printf("ℹ You're currently using the context you want to delete, I'll switch you to the %s context..\n", color.FgCyan.Render(firstContext))
-			opts.Config.CurrentContext = firstContext
-		}
-
-		// Write new context list to kubeconfig file
-		err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
-		if err != nil {
-			log.Fatal("Error %s, modifying config", err.Error())
-			return
-		}
-
-		fmt.Printf("✔ Successfully deleted context %s!\n", color.FgCyan.Render(contextToDelete))
-	},
+	fmt.Printf("✔ Successfully deleted context %s!\n", color.FgCyan.Render(contextToDelete))
 }
 
+func selectContextToDelete(opts *utils.KubeConfigOptions) (string, error) {
+	// If a context was given as an argument, check if it exists in the kubeconfig
+	if context != "" {
+		if !slices.Contains(opts.Contexts, context) {
+			fmt.Printf("❌ Could not find context in kubeconfig file!\n")
+			fmt.Printf("ℹ Found the following contexts in your kubeconfig file: %q\n", opts.Contexts)
+			return "", fmt.Errorf("context not found in kubeconfig")
+		}
+		return context, nil
+	}
+
+	// No context was given, set up a prompt to interactively select context
+	prompt := &survey.Select{
+		Message: "Choose a context to delete:",
+		Options: opts.Contexts,
+	}
+
+	err := survey.AskOne(prompt, &context)
+	if err != nil {
+		if err.Error() == "interrupt" {
+			fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
+			os.Exit(1)
+			return "", nil
+		} else {
+			return "", fmt.Errorf("error selecting context: %s", err)
+		}
+	}
+
+	return context, nil
+}
+
+func deleteContext(opts *utils.KubeConfigOptions, contextToDelete string) error {
+	fmt.Printf("ℹ Deleting context %s from kubeconfig file..\n", color.FgCyan.Render(contextToDelete))
+
+	// Remove context from context list in configuration struct
+	delete(opts.Config.Contexts, contextToDelete)
+
+	// Change current context to first context in list if current context is deleted
+	if opts.CurrentContext == contextToDelete {
+		firstContext := getFirstContext(opts.Config.Contexts)
+		fmt.Printf("ℹ You're currently using the context you want to delete, I'll switch you to the %s context..\n", color.FgCyan.Render(firstContext))
+		opts.Config.CurrentContext = firstContext
+	}
+
+	return nil
+}
+
+func getFirstContext(contexts map[string]*api.Context) string {
+	var firstContext string
+
+	// Loop through contexts and return first item
+	for context := range contexts {
+		firstContext = context
+		break
+	}
+	return firstContext
+}
+
+// Cobra command initialization
 func init() {
 	rootCmd.AddCommand(deleteCmd)
-
+	
 	deleteCmd.Flags().StringVarP(&context, "context", "c", "", "name of context which you want to delete")
 }

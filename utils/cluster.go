@@ -20,19 +20,19 @@ package utils
 
 import (
 	"context"
-	"errors"
 	"crypto/tls"
-  "net/http"
+	"errors"
+	"fmt"
+	"net/http"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// GetNamespaces retrieves a list of namespaces in the current cluster.
 func (opts *KubeConfigOptions) GetNamespaces() error {
-	var err error
-
 	namespaceList, err := opts.Client.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get namespaces: %v", err)
 	}
 
 	for _, n := range namespaceList.Items {
@@ -42,12 +42,11 @@ func (opts *KubeConfigOptions) GetNamespaces() error {
 	return nil
 }
 
+// GetPods retrieves a list of pods in the current cluster.
 func (opts *KubeConfigOptions) GetPods() error {
-	var err error
-
 	podList, err := opts.Client.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get pods: %v", err)
 	}
 
 	for _, pod := range podList.Items {
@@ -57,25 +56,23 @@ func (opts *KubeConfigOptions) GetPods() error {
 	return nil
 }
 
+// GetClusterUrl retrieves the connection URL of the current cluster and tests connectivity.
 func (opts *KubeConfigOptions) GetClusterUrl() (string, error) {
-	var err error
+	currentClusterName := opts.Config.Contexts[opts.Config.CurrentContext].Cluster
+	connectionURL := opts.Config.Clusters[currentClusterName].Server
 
-	// Retrieve connection URL and test connectivity
-  currentClusterName := opts.Config.Contexts[opts.Config.CurrentContext].Cluster
-  connectionUrl := opts.Config.Clusters[currentClusterName].Server
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-  http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	response, err := http.Get(connectionURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to connect to the API endpoint: %v", err)
+	}
 
-  response, err := http.Get(connectionUrl)
-  if err != nil {
-    return "", err
-  } else {
-    if response.StatusCode != 401 { // We can expect to be hit with an "Unauthorized" message, this *should* be fine.
-      return "", errors.New("Did not receive expected \"401\" HTTP status code!")
-    }
-  }
+	defer response.Body.Close()
 
-  response.Body.Close()
+	if response.StatusCode != http.StatusUnauthorized {
+		return "", errors.New("did not receive expected \"401\" HTTP status code")
+	}
 
-  return connectionUrl, nil
+	return connectionURL, nil
 }

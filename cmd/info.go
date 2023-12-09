@@ -20,6 +20,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gookit/color"
 	"github.com/DB-Vincent/kube-context/utils"
@@ -30,29 +31,53 @@ import (
 var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Retrieve information regarding the current context",
-	Run: func(cmd *cobra.Command, args []string) {
-		opts := &utils.KubeConfigOptions{}
-
-		// Initialize environment (retrieve config from file, create clientset)
-		opts.Init(kubeConfigPath)
-
-		// Retrieve and display namespaces
-		opts.GetNamespaces()
-
-		// Retrieve and display pods
-		opts.GetPods()
-
-		// Retrieve cluster url
-		clusterUrl, err := opts.GetClusterUrl()
-    if err != nil {
-      fmt.Printf("❌ An error occurred while connecting to the API endpoint!\nError: %s\n", err.Error())
-    }
-
-    fmt.Printf("The %s cluster currently has %s pods spread over %s namespaces!\n", opts.Config.CurrentContext, color.FgCyan.Render(len(opts.Pods)), color.FgCyan.Render(len(opts.Namespaces)))
-    fmt.Printf("Connecting to this cluster can be done using the %s API endpoint.\n", color.FgCyan.Render(clusterUrl))
-	},
+	Run:   runInfoCommand,
 }
 
+// Main logic for info command
+func runInfoCommand(cmd *cobra.Command, args []string) {
+	// Initialize configuration struct
+	opts := &utils.KubeConfigOptions{}
+	opts.Init(kubeConfigPath)
+
+	// Retrieves info and displays it to the user
+	err := retrieveAndDisplayInfo(opts)
+	if err != nil {
+		log.Fatalf("Error retrieving and displaying information: %s", err)
+	}
+}
+
+func retrieveAndDisplayInfo(opts *utils.KubeConfigOptions) error {
+	// Retrive cluster URL and make sure that connection works
+	clusterUrl, err := opts.GetClusterUrl()
+	if err != nil {
+		fmt.Printf("❌ An error occurred while connecting to the API endpoint!\nError: %s\n", err.Error())
+		return fmt.Errorf("error retrieving cluster URL: %s", err)
+	}
+
+	// Retrieve namespaces
+	if err := opts.GetNamespaces(); err != nil {
+		return fmt.Errorf("error retrieving namespaces: %s", err)
+	}
+
+	// Retrieve pods
+	if err := opts.GetPods(); err != nil {
+		return fmt.Errorf("error retrieving pods: %s", err)
+	}
+
+	// Display retrieved information to the user
+	displayInfo(opts, clusterUrl)
+
+	return nil
+}
+
+func displayInfo(opts *utils.KubeConfigOptions, clusterUrl string) {
+	// Print the beautiful data
+	fmt.Printf("The %s cluster currently has %s pods spread over %s namespaces!\n", opts.Config.CurrentContext, color.FgCyan.Render(len(opts.Pods)), color.FgCyan.Render(len(opts.Namespaces)))
+	fmt.Printf("Connecting to this cluster can be done using the %s API endpoint.\n", color.FgCyan.Render(clusterUrl))
+}
+
+// Cobra command initialization
 func init() {
 	rootCmd.AddCommand(infoCmd)
 }

@@ -20,12 +20,14 @@ package main
 
 import "github.com/DB-Vincent/kube-context/cmd"
 
+// Simple initialization for version info, used while developing
 var (
 	version = "dev"
 	commit  = "none"
 	date    = "unknown"
 )
 
+// Main command logic
 func main() {
 	cmd.SetVersionInfo(version, commit, date)
 	cmd.Execute()
