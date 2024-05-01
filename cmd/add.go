@@ -27,6 +27,9 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/DB-Vincent/kube-context/utils"
 	"github.com/spf13/cobra"
+
+	"k8s.io/client-go/tools/clientcmd"
+	api "k8s.io/client-go/tools/clientcmd/api"
 )
 
 // addCmd represents the add command
@@ -38,16 +41,40 @@ var addCmd = &cobra.Command{
 
 // Main logic for add command
 func runAddCommand(cmd *cobra.Command, args []string) {
+	var newConfig = false
+
 	// Initialize configuration struct
 	opts := &utils.KubeConfigOptions{}
-	opts.Init(kubeConfigPath)
+	// Check if kubeconfig file exists
+	_, err := os.Stat(kubeConfigPath)
+	if os.IsNotExist(err) {
+		newConfig = true
 
+		// If kubeconfig file doesn't exist, create an empty config
+		opts.Config = &api.Config{
+			APIVersion: "v1",
+			Kind:       "Config",
+			Contexts: map[string]*api.Context{},
+			AuthInfos: map[string]*api.AuthInfo{},
+			Clusters: map[string]*api.Cluster{},
+		}
+	} else if err != nil {
+		// Error occurred while checking kubeconfig existence
+		fmt.Printf("%s", err)
+	} else {
+		// Load kubeconfig from file
+		err := opts.Init(kubeConfigPath)
+		if err != nil {
+			fmt.Printf("%s", err)
+		}
+	}
+	
 	answers := struct {
 		Name 		string
 		Endpoint 	string
+		Authority	string
 		Certificate	string
 		Key 		string
-		Continue	bool
 	}{}
 
 	// Set up an interactive prompt to select a context
@@ -61,9 +88,11 @@ func runAddCommand(cmd *cobra.Command, args []string) {
 					return errors.New("input value is not a string")
 				}
 
-				if _, exists := opts.Config.Contexts[str]; exists {
-					return fmt.Errorf("a context with name '%s' already exists", str)
-				}
+				fmt.Printf("%s", str)
+
+				// if _, exists := opts.Config.Contexts[str]; exists {
+				// 	return fmt.Errorf("a context with name '%s' already exists", str)
+				// }
 				return nil
 			},
 		},
@@ -71,6 +100,27 @@ func runAddCommand(cmd *cobra.Command, args []string) {
 			Name:     "endpoint",
 			Prompt:   &survey.Input{Message: "Please enter the cluster endpoint:"},
 			Validate: survey.Required,
+		},
+		{
+			Name:   "authority",
+			Prompt: &survey.Input{
+				Message: "Please enter the certificate authority location:",
+				Suggest: func (toComplete string) []string {
+					files, _ := filepath.Glob(toComplete + "*")
+					return files
+				},
+			},
+			Validate: func (val interface{}) error {
+				str, ok := val.(string)
+				if !ok {
+					return errors.New("input value is not a string")
+				}
+
+				if _, err := os.Stat(str); errors.Is(err, os.ErrNotExist) {
+					return fmt.Errorf("could not find a file with name '%s'", str)
+				}
+				return nil
+			},
 		},
 		{
 			Name:   "certificate",
@@ -114,15 +164,9 @@ func runAddCommand(cmd *cobra.Command, args []string) {
 				return nil
 			},
 		},
-		{
-			Name:  "continue",
-			Prompt: &survey.Confirm{
-				Message: "Does the information above look right?",
-			},
-		},
 	}
 	
-	err := survey.Ask(prompt, &answers)
+	err = survey.Ask(prompt, &answers)
 	if err != nil {
 		if err.Error() == "interrupt" {
 			fmt.Println("ℹ Alright then, keep your secrets! Exiting..")
@@ -131,12 +175,37 @@ func runAddCommand(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if (!answers.Continue) {
-		fmt.Println("ℹ Hm, okay. Can you try launching the command again and providing the right information?\n")
-		return
-	}
+	var cluster api.Cluster
+	cluster.Server = answers.Endpoint
+	cluster.CertificateAuthority = answers.Authority
 
-	fmt.Printf("name: %s\nendpoint: %s\ncertificate: %s\nkey: %s", answers.Name, answers.Endpoint, answers.Certificate, answers.Key)
+	var context api.Context
+	context.Cluster = answers.Name
+	context.AuthInfo = answers.Name
+
+	var auth api.AuthInfo
+	auth.ClientCertificate = answers.Certificate
+	auth.ClientKey = answers.Key
+
+	opts.Config.Clusters[answers.Name] = &cluster
+	opts.Config.Contexts[answers.Name] = &context
+	opts.Config.AuthInfos[answers.Name] = &auth
+
+	if (newConfig) {
+		err := clientcmd.WriteToFile(*opts.Config, kubeConfigPath)
+		if err != nil {
+			fmt.Printf("Error saving kubeconfig to file: %v\n", err)
+			return
+		}
+	} else {
+		// Write modified configuration to kubeconfig
+		configAccess := clientcmd.NewDefaultPathOptions()
+		err = clientcmd.ModifyConfig(configAccess, *opts.Config, true)
+		if err != nil {
+			fmt.Errorf("error modifying config: %s", err)
+			return
+		}
+	}
 }
 
 // Cobra command initialization
