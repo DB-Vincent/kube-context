@@ -42,7 +42,7 @@ func runListCommand(cmd *cobra.Command, args []string) {
 	// Retrieve contexts
 	opts.GetContexts()
 
-	fmt.Printf("You currently have %s contexts configured:\n", color.FgCyan.Render(len(opts.Contexts)))
+	fmt.Printf("You currently have %s context(s) configured:\n", color.FgCyan.Render(len(opts.Contexts)))
 	for _, context := range opts.Contexts {
 		fmt.Printf("- %s\n", color.FgCyan.Render(context))
 	}
