@@ -66,7 +66,7 @@ func ContextSwitcher(cmd *cobra.Command, args []string) {
 	if context == "" {
 		err := promptForContext(opts, &context)
 		if err != nil {
-			log.Fatalf("Error prompting for context: %s", err)
+			fmt.Printf("%v\n", err)
 			return
 		}
 	} else { // Context argument was given, check if it exists in the kubeconfig file
@@ -91,8 +91,7 @@ func promptForContext(opts *utils.KubeConfigOptions, context *string) error {
 	err := survey.AskOne(prompt, context)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			fmt.Println("ℹ Alright then, keep your secrets! Exiting..")
-			return nil
+			return fmt.Errorf("ℹ Alright then, keep your secrets! Exiting..")
 		} else {
 			return fmt.Errorf("%s", err)
 		}
