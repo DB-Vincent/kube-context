@@ -20,7 +20,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/gookit/color"
 	"github.com/DB-Vincent/kube-context/utils"
@@ -43,7 +42,8 @@ func runInfoCommand(cmd *cobra.Command, args []string) {
 	// Retrieves info and displays it to the user
 	err := retrieveAndDisplayInfo(opts)
 	if err != nil {
-		log.Fatalf("Error retrieving and displaying information: %s", err)
+		fmt.Printf("Error retrieving and displaying information: %s", err)
+		return
 	}
 }
 

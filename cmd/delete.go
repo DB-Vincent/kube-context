@@ -21,7 +21,6 @@ package cmd
 import (
 	"os"
 	"fmt"
-	"log"
 	"slices"
 
 	"github.com/gookit/color"
@@ -53,21 +52,21 @@ func runDeleteCommand(cmd *cobra.Command, args []string) {
 	// Prompt the user to select a context to delete
 	contextToDelete, err := selectContextToDelete(opts)
 	if err != nil {
-		log.Fatalf("Error selecting context to delete: %s", err)
+		fmt.Printf("Error selecting context to delete: %s", err)
 		return
 	}
 
 	// Remove selected context from kubeconfig
 	err = deleteContext(opts, contextToDelete)
 	if err != nil {
-		log.Fatalf("Error deleting context: %s", err)
+		fmt.Printf("Error deleting context: %s", err)
 		return
 	}
 
 	// Write modified configuration to kubeconfig file
 	err = clientcmd.ModifyConfig(configAccess, *opts.Config, true)
 	if err != nil {
-		log.Fatalf("Error updating kubeconfig file: %s", err)
+		fmt.Printf("Error updating kubeconfig file: %s", err)
 		return
 	}
 

@@ -20,7 +20,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"slices"
 
 	"github.com/gookit/color"
@@ -54,14 +53,14 @@ func runRenameCommand(cmd *cobra.Command, args []string) {
 	// Retrieve context inputs
 	err := validateAndSetContextNames(opts)
 	if err != nil {
-		log.Fatalf("Error validating and setting context names: %s", err)
+		fmt.Printf("Error validating and setting context names: %s", err)
 		return
 	}
 
 	// Rename context
 	err = renameContext(opts, configAccess)
 	if err != nil {
-		log.Fatalf("Error renaming context: %s", err)
+		fmt.Printf("Error renaming context: %s", err)
 		return
 	}
 
@@ -73,10 +72,11 @@ func validateAndSetContextNames(opts *utils.KubeConfigOptions) error {
 	if contextFrom == "" && contextTo == "" {
 		err := promptContextNames(opts)
 		if err != nil {
-			fmt.Printf("%v\n", err)
-			return
+			return fmt.Errorf("%v\n", err)
 		}
-	} else if contextFrom == "" || contextTo == "" { // Either "from" or "to" was given, but not both
+	}
+	
+	if contextFrom == "" || contextTo == "" { // Either "from" or "to" was given, but not both
 		fmt.Printf("❌ Please enter both the name of the context you want to rename and the new name of the context. Use `kube-context rename --help` for more information.\n")
 		return fmt.Errorf("missing context names")
 	}
@@ -123,7 +123,7 @@ func promptContextNames(opts *utils.KubeConfigOptions) error {
 	err := survey.Ask(qs, &answers)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			return fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
+			return fmt.Errorf("ℹ Alright then, keep your secrets! Exiting..\n")
 		} else {
 			return fmt.Errorf("%s", err)
 		}
