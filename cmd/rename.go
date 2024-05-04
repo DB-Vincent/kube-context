@@ -73,7 +73,8 @@ func validateAndSetContextNames(opts *utils.KubeConfigOptions) error {
 	if contextFrom == "" && contextTo == "" {
 		err := promptContextNames(opts)
 		if err != nil {
-			return fmt.Errorf("error prompting context names: %s", err)
+			fmt.Printf("%v\n", err)
+			return
 		}
 	} else if contextFrom == "" || contextTo == "" { // Either "from" or "to" was given, but not both
 		fmt.Printf("❌ Please enter both the name of the context you want to rename and the new name of the context. Use `kube-context rename --help` for more information.\n")
@@ -122,8 +123,7 @@ func promptContextNames(opts *utils.KubeConfigOptions) error {
 	err := survey.Ask(qs, &answers)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
-			return nil
+			return fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
 		} else {
 			return fmt.Errorf("%s", err)
 		}
