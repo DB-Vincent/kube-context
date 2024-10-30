@@ -48,37 +48,16 @@ type contextDefinition struct {
 	Key 		string
 }
 
-var newConfig = false
-
 // Main logic for add command
 func runAddCommand(cmd *cobra.Command, args []string) {
 	// Initialize configuration struct
 	opts := &utils.KubeConfigOptions{}
-	// Check if kubeconfig file exists
-	_, err := os.Stat(kubeConfigPath)
-	if os.IsNotExist(err) {
-		newConfig = true
-
-		// If kubeconfig file doesn't exist, create an empty config
-		opts.Config = &api.Config{
-			APIVersion: "v1",
-			Kind:       "Config",
-			Contexts: map[string]*api.Context{},
-			AuthInfos: map[string]*api.AuthInfo{},
-			Clusters: map[string]*api.Cluster{},
-		}
-	} else if err != nil {
-		// Error occurred while checking kubeconfig existence
+	err := opts.InitOrCreate(kubeConfigPath)
+	if err != nil {
 		fmt.Printf("%v\n", err)
 		return
-	} else {
-		// Load kubeconfig from file
-		err := opts.Init(kubeConfigPath)
-		if err != nil {
-			fmt.Printf("%s", err)
-		}
 	}
-	
+
 	// Retrieve the context information from the user
 	answers, err := promptForContextInfo(opts)
 	if (contextDefinition{}) == answers {
@@ -183,7 +162,7 @@ func promptForContextInfo(opts *utils.KubeConfigOptions) (contextDefinition, err
 			},
 		},
 	}
-	
+
 	// Prompt the user for information
 	err := survey.Ask(prompt, &answers)
 	if err != nil {
@@ -216,20 +195,11 @@ func writeConfig(opts *utils.KubeConfigOptions, answers contextDefinition) error
 	opts.Config.Contexts[answers.Name] = &context
 	opts.Config.AuthInfos[answers.Name] = &auth
 
-	// Write configuration
-	if (newConfig) {
-		// No Kubeconfig was present, so we create one with the new data
-		err := clientcmd.WriteToFile(*opts.Config, kubeConfigPath)
-		if err != nil {
-			return err
-		}
-	} else {
-		// Write modified configuration to kubeconfig
-		configAccess := clientcmd.NewDefaultPathOptions()
-		err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
-		if err != nil {
-			return err
-		}
+	// Write modified configuration to kubeconfig
+	configAccess := clientcmd.NewDefaultPathOptions()
+	err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
+	if err != nil {
+		return err
 	}
 
 	return nil
