@@ -36,7 +36,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "kube-context",
 	Short: "A simple Go tool to manage Kubernetes contexts in a user-friendly way",
-	Long: `kube-context is a command-line interface (CLI) tool designed to simplify the management of Kubernetes contexts, allowing users to seamlessly switch between different Kubernetes clusters with ease. 
+	Long: `kube-context is a command-line interface (CLI) tool designed to simplify the management of Kubernetes contexts, allowing users to seamlessly switch between different Kubernetes clusters with ease.
 Whether you are working on multiple projects or interacting with various Kubernetes environments, kube-context provides essential functionality to streamline context management.`,
 	Run: ContextSwitcher,
 }
@@ -56,7 +56,11 @@ func SetVersionInfo(version, commit, date string) {
 func ContextSwitcher(cmd *cobra.Command, args []string) {
 	// Initialize configuration struct
 	opts := &utils.KubeConfigOptions{}
-	opts.Init(kubeConfigPath)
+	err := opts.Init(kubeConfigPath)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return
+	}
 
 	// Retrieve contexts and set up configAccess so we can write the adjusted configuration
 	opts.GetContexts()
