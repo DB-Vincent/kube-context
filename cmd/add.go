@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/DB-Vincent/kube-context/utils"
+	"github.com/DB-Vincent/kube-context/pkg/utils"
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"

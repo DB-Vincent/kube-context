@@ -24,7 +24,7 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/DB-Vincent/kube-context/utils"
+	"github.com/DB-Vincent/kube-context/pkg/utils"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -75,14 +75,14 @@ func validateAndSetContextNames(opts *utils.KubeConfigOptions) error {
 			return fmt.Errorf("%v\n", err)
 		}
 	}
-	
+
 	if contextFrom == "" || contextTo == "" { // Either "from" or "to" was given, but not both
 		fmt.Printf("❌ Please enter both the name of the context you want to rename and the new name of the context. Use `kube-context rename --help` for more information.\n")
 		return fmt.Errorf("missing context names")
 	}
 
 	// Verify that context to rename exists in kubeconfig
-	if !slices.Contains(opts.Contexts, contextFrom) { 
+	if !slices.Contains(opts.Contexts, contextFrom) {
 		fmt.Printf("❌ Could not find the \"from\" context in kubeconfig file!\n")
 		fmt.Printf("ℹ Found the following contexts in your kubeconfig file: %q\n", opts.Contexts)
 		return fmt.Errorf("context not found in kubeconfig")
@@ -162,4 +162,3 @@ func init() {
 	renameCmd.Flags().StringVarP(&contextFrom, "from", "f", "", "name of context which you want to rename")
 	renameCmd.Flags().StringVarP(&contextTo, "to", "t", "", "new name of the context")
 }
- 

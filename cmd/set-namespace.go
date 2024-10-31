@@ -25,7 +25,7 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/DB-Vincent/kube-context/utils"
+	"github.com/DB-Vincent/kube-context/pkg/utils"
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -142,4 +142,3 @@ func init() {
 	rootCmd.AddCommand(setDefaultNamespaceCmd)
 	setDefaultNamespaceCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "name of namespace you want to set as default")
 }
- 

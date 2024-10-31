@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	"github.com/gookit/color"
-	"github.com/DB-Vincent/kube-context/utils"
+	"github.com/DB-Vincent/kube-context/pkg/utils"
 	"github.com/spf13/cobra"
 )
 

@@ -25,20 +25,20 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/DB-Vincent/kube-context/utils"
+	"github.com/DB-Vincent/kube-context/pkg/utils"
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"
 	api "k8s.io/client-go/tools/clientcmd/api"
 )
- 
+
 // deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Remove a context from your kubeconfig",
 	Run:   runDeleteCommand,
 }
- 
+
 // Main logic for delete command
 func runDeleteCommand(cmd *cobra.Command, args []string) {
 	// Initialize configuration struct
@@ -134,6 +134,6 @@ func getFirstContext(contexts map[string]*api.Context) string {
 // Cobra command initialization
 func init() {
 	rootCmd.AddCommand(deleteCmd)
-	
+
 	deleteCmd.Flags().StringVarP(&context, "context", "c", "", "name of context which you want to delete")
 }

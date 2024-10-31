@@ -26,12 +26,14 @@ import (
 	"net/http"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/DB-Vincent/kube-context/pkg/logger"
 )
 
 // GetNamespaces retrieves a list of namespaces in the current cluster.
 func (opts *KubeConfigOptions) GetNamespaces() error {
 	namespaceList, err := opts.Client.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
+		logHandler.Handle(logger.ErrGetResource, err, "namespace")
 		return fmt.Errorf("failed to get namespaces: %v", err)
 	}
 

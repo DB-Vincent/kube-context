@@ -27,7 +27,7 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/DB-Vincent/kube-context/utils"
+	"github.com/DB-Vincent/kube-context/pkg/utils"
 	"github.com/DB-Vincent/kube-context/pkg/logger"
 	"github.com/spf13/cobra"
 
@@ -47,6 +47,7 @@ Whether you are working on multiple projects or interacting with various Kuberne
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Initialize the logger with the debug mode setting
 		logHandler = logger.New(debugMode)
+		utils.SetLogger(logHandler)
 	},
 	Run: ContextSwitcher,
 }
