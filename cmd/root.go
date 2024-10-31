@@ -28,9 +28,15 @@ import (
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/DB-Vincent/kube-context/utils"
+	"github.com/DB-Vincent/kube-context/pkg/logger"
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"
+)
+
+var (
+	debugMode  bool
+	logHandler *logger.Logger
 )
 
 var rootCmd = &cobra.Command{
@@ -38,6 +44,10 @@ var rootCmd = &cobra.Command{
 	Short: "A simple Go tool to manage Kubernetes contexts in a user-friendly way",
 	Long: `kube-context is a command-line interface (CLI) tool designed to simplify the management of Kubernetes contexts, allowing users to seamlessly switch between different Kubernetes clusters with ease.
 Whether you are working on multiple projects or interacting with various Kubernetes environments, kube-context provides essential functionality to streamline context management.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// Initialize the logger with the debug mode setting
+		logHandler = logger.New(debugMode)
+	},
 	Run: ContextSwitcher,
 }
 
@@ -141,4 +151,5 @@ func init() {
 	rootCmd.Flags().StringVarP(&context, "context", "c", "", "name of context to which you want to switch")
 
 	rootCmd.PersistentFlags().StringVar(&kubeConfigPath, "config", path.Join(home, ".kube/config"), "kubeconfig file location")
+	rootCmd.PersistentFlags().BoolVar(&debugMode, "debug", false, "Enable debug mode for detailed logs")
 }
