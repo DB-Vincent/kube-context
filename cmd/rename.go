@@ -121,7 +121,7 @@ func promptContextNames(opts *utils.KubeConfigOptions) {
 	if err != nil {
 		if err.Error() == "interrupt" {
 			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted context rename operation"))
-			os.Exit(1)
+			os.Exit(0)
 			return
 		} else {
 			logHandler.Handle(logger.ErrorType{

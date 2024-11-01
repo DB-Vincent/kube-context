@@ -119,7 +119,7 @@ func promptForNamespace(opts *utils.KubeConfigOptions) string {
 	if err != nil {
 		if err.Error() == "interrupt" {
 			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted namespace selection"))
-			os.Exit(1)
+			os.Exit(0)
 			return ""
 		} else {
 			logHandler.Handle(logger.ErrorType{

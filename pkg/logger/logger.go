@@ -40,9 +40,15 @@ func (l *Logger) Handle(errType ErrorType, err error, args ...interface{}) {
 		message = fmt.Sprintf(message, args...)
 	}
 
+
 	// Print user-friendly message with appropriate prefix
-	prefix := l.getPrefix(errType.Level)
-	fmt.Fprintf(os.Stderr, "%s %s\n", prefix, message)
+	if errType.Level == Info {
+		prefix := l.getPrefix(errType.Level)
+		fmt.Fprintf(os.Stdout, "%s %s\n", prefix, message)
+	} else {
+		prefix := l.getPrefix(errType.Level)
+		fmt.Fprintf(os.Stderr, "%s %s\n", prefix, message)
+	}
 
 	// Print debug information if enabled
 	if l.IsDebug() && err != nil {

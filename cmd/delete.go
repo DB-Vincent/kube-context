@@ -96,7 +96,7 @@ func selectContextToDelete(opts *utils.KubeConfigOptions) string {
 	if err != nil {
 		if err.Error() == "interrupt" {
 			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted context deletion"))
-			os.Exit(1)
+			os.Exit(0)
 			return ""
 		} else {
 			logHandler.Handle(logger.ErrSelectContext, err)

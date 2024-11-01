@@ -110,7 +110,7 @@ func promptForContext(opts *utils.KubeConfigOptions, context *string) {
 	if err != nil {
 		if err.Error() == "interrupt" {
 			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted"))
-    	os.Exit(1)
+    	os.Exit(0)
 			*context = ""
 		} else {
 			logHandler.Handle(logger.ErrorType{
@@ -171,5 +171,5 @@ func init() {
 	rootCmd.Flags().StringVarP(&context, "context", "c", "", "name of context to which you want to switch")
 
 	rootCmd.PersistentFlags().StringVar(&kubeConfigPath, "config", path.Join(home, ".kube/config"), "kubeconfig file location")
-	rootCmd.PersistentFlags().BoolVar(&debugMode, "debug", false, "Enable debug mode for detailed logs")
+	rootCmd.PersistentFlags().BoolVar(&debugMode, "verbose", false, "enable debug mode for detailed logs")
 }
