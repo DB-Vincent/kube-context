@@ -26,6 +26,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/DB-Vincent/kube-context/pkg/utils"
+	"github.com/DB-Vincent/kube-context/pkg/logger"
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -52,28 +53,25 @@ type contextDefinition struct {
 func runAddCommand(cmd *cobra.Command, args []string) {
 	// Initialize configuration struct
 	opts := &utils.KubeConfigOptions{}
-	err := opts.InitOrCreate(kubeConfigPath)
-	if err != nil {
-		fmt.Printf("%v\n", err)
+	if err := opts.InitOrCreate(kubeConfigPath); err != nil {
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "Failed to initialize kubeconfig",
+		}, err)
 		return
 	}
 
 	// Retrieve the context information from the user
-	answers, err := promptForContextInfo(opts)
+	answers := promptForContextInfo(opts)
 	if (contextDefinition{}) == answers {
-		fmt.Printf("%v\n", err)
 		return
 	}
 
 	// Write new context to the Kubeconfig file
-	err = writeConfig(opts, answers)
-	if err != nil {
-		fmt.Printf("%v\n", err)
-		return
-	}
+	writeConfig(opts, answers)
 }
 
-func promptForContextInfo(opts *utils.KubeConfigOptions) (contextDefinition, error) {
+func promptForContextInfo(opts *utils.KubeConfigOptions) contextDefinition {
 	var answers = contextDefinition{}
 
 	// Set up an interactive prompt to select a context
@@ -167,17 +165,24 @@ func promptForContextInfo(opts *utils.KubeConfigOptions) (contextDefinition, err
 	err := survey.Ask(prompt, &answers)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			fmt.Println("")
-			return contextDefinition{}, fmt.Errorf("ℹ Alright then, keep your secrets! Exiting..")
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Info,
+				Message: "Alright then, keep your secrets! Exiting..",
+			}, nil)
+			return contextDefinition{}
 		} else {
-			return contextDefinition{}, fmt.Errorf("%s", err)
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Error,
+				Message: "Failed to get context information",
+			}, err)
+			return contextDefinition{}
 		}
 	}
 
-	return answers, nil
+	return answers
 }
 
-func writeConfig(opts *utils.KubeConfigOptions, answers contextDefinition) error {
+func writeConfig(opts *utils.KubeConfigOptions, answers contextDefinition) {
 	// Add information to the internal config struct
 	var cluster api.Cluster
 	cluster.Server = answers.Endpoint
@@ -197,12 +202,18 @@ func writeConfig(opts *utils.KubeConfigOptions, answers contextDefinition) error
 
 	// Write modified configuration to kubeconfig
 	configAccess := clientcmd.NewDefaultPathOptions()
-	err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
-	if err != nil {
-		return err
+	if err := clientcmd.ModifyConfig(configAccess, *opts.Config, true); err != nil {
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "Failed to write to kubeconfig",
+		}, err)
+		return
 	}
 
-	return nil
+	logHandler.Handle(logger.ErrorType{
+		Level:   logger.Info,
+		Message: fmt.Sprintf("Successfully added context %s!", answers.Name),
+	}, nil)
 }
 
 // Cobra command initialization
