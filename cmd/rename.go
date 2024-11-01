@@ -22,6 +22,7 @@ import (
 	"os"
 	"fmt"
 	"slices"
+	"errors"
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
@@ -119,8 +120,8 @@ func promptContextNames(opts *utils.KubeConfigOptions) {
 	err := survey.Ask(qs, &answers)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			logHandler.Handle(logger.ErrUserInterrupt, nil)
-    	os.Exit(1)
+			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted context rename operation"))
+			os.Exit(1)
 			return
 		} else {
 			logHandler.Handle(logger.ErrorType{

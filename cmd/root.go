@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"errors"
 	"slices"
 
 	"github.com/gookit/color"
@@ -108,7 +109,7 @@ func promptForContext(opts *utils.KubeConfigOptions, context *string) {
 	err := survey.AskOne(prompt, context)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			logHandler.Handle(logger.ErrUserInterrupt, nil)
+			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted"))
     	os.Exit(1)
 			*context = ""
 		} else {

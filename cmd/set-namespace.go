@@ -22,6 +22,7 @@ import (
 	"os"
 	"fmt"
 	"slices"
+	"errors"
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
@@ -117,8 +118,8 @@ func promptForNamespace(opts *utils.KubeConfigOptions) string {
 	err := survey.AskOne(prompt, &result)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			logHandler.Handle(logger.ErrUserInterrupt, nil)
-    	os.Exit(1)
+			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted namespace selection"))
+			os.Exit(1)
 			return ""
 		} else {
 			logHandler.Handle(logger.ErrorType{

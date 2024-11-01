@@ -22,6 +22,7 @@ import (
 	"os"
 	"fmt"
 	"slices"
+	"errors"
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
@@ -94,7 +95,7 @@ func selectContextToDelete(opts *utils.KubeConfigOptions) string {
 	err := survey.AskOne(prompt, &context)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			logHandler.Handle(logger.ErrUserInterrupt, nil)
+			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted context deletion"))
 			os.Exit(1)
 			return ""
 		} else {
