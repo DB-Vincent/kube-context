@@ -19,6 +19,7 @@
 package cmd
 
 import (
+	"os"
 	"fmt"
 	"slices"
 
@@ -116,10 +117,8 @@ func promptForNamespace(opts *utils.KubeConfigOptions) string {
 	err := survey.AskOne(prompt, &result)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			logHandler.Handle(logger.ErrorType{
-				Level:   logger.Info,
-				Message: "Alright then, keep your secrets! Exiting..",
-			}, nil)
+			logHandler.Handle(logger.ErrUserInterrupt, nil)
+    	os.Exit(1)
 			return ""
 		} else {
 			logHandler.Handle(logger.ErrorType{

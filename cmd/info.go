@@ -48,10 +48,7 @@ func retrieveAndDisplayInfo(opts *utils.KubeConfigOptions) {
 	// Retrive cluster URL and make sure that connection works
 	clusterUrl, err := opts.GetClusterUrl()
 	if err != nil {
-		logHandler.Handle(logger.ErrorType{
-			Level:   logger.Error,
-			Message: "An error occurred while connecting to the API endpoint",
-		}, err)
+		logHandler.Handle(logger.ErrAPIEndpoint, err)
 	}
 
 	// Retrieve namespaces

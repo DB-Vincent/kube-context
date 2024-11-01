@@ -19,6 +19,7 @@
 package cmd
 
 import (
+	"os"
 	"fmt"
 	"slices"
 
@@ -118,10 +119,8 @@ func promptContextNames(opts *utils.KubeConfigOptions) {
 	err := survey.Ask(qs, &answers)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			logHandler.Handle(logger.ErrorType{
-				Level:   logger.Info,
-				Message: "Alright then, keep your secrets! Exiting..",
-			}, nil)
+			logHandler.Handle(logger.ErrUserInterrupt, nil)
+    	os.Exit(1)
 			return
 		} else {
 			logHandler.Handle(logger.ErrorType{
@@ -159,10 +158,7 @@ func renameContext(opts *utils.KubeConfigOptions, configAccess clientcmd.ConfigA
 	// Modify the kubeconfig to ensure that the changes persist
 	err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
 	if err != nil {
-		logHandler.Handle(logger.ErrorType{
-			Level:   logger.Error,
-			Message: "Failed to write to kubeconfig",
-		}, err)
+		logHandler.Handle(logger.ErrWriteKubeconfig, err)
 		return
 	}
 

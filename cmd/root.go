@@ -108,10 +108,8 @@ func promptForContext(opts *utils.KubeConfigOptions, context *string) {
 	err := survey.AskOne(prompt, context)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			logHandler.Handle(logger.ErrorType{
-				Level:   logger.Info,
-				Message: "Alright then, keep your secrets! Exiting..",
-			}, nil)
+			logHandler.Handle(logger.ErrUserInterrupt, nil)
+    	os.Exit(1)
 			*context = ""
 		} else {
 			logHandler.Handle(logger.ErrorType{

@@ -56,4 +56,32 @@ var (
 		Level: Fatal,
 		Message: "Could not get %s resource(s) from Kubernetes cluster. Please verify that you have the correct permissions.",
 	}
+	ErrInitKubeconfig = ErrorType{
+		Level:   Error,
+		Message: "Failed to initialize kubeconfig",
+	}
+	ErrWriteKubeconfig = ErrorType{
+		Level:   Error,
+		Message: "Failed to write to kubeconfig",
+	}
+	ErrContextNotFound = ErrorType{
+		Level:   Error,
+		Message: "Could not find context in kubeconfig file! Found the following contexts: %q",
+	}
+	ErrSelectContext = ErrorType{
+		Level:   Error,
+		Message: "Error selecting context",
+	}
+	ErrUserInterrupt = ErrorType{
+		Level:   Info,
+		Message: "Alright then, keep your secrets! Exiting..",
+	}
+	ErrAPIEndpoint = ErrorType{
+		Level:   Error,
+		Message: "An error occurred while connecting to the API endpoint",
+	}
+	ErrPromptFailed = ErrorType{
+		Level:   Error,
+		Message: "Failed to get context information",
+	}
 )

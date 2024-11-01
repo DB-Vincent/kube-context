@@ -54,10 +54,7 @@ func runAddCommand(cmd *cobra.Command, args []string) {
 	// Initialize configuration struct
 	opts := &utils.KubeConfigOptions{}
 	if err := opts.InitOrCreate(kubeConfigPath); err != nil {
-		logHandler.Handle(logger.ErrorType{
-			Level:   logger.Error,
-			Message: "Failed to initialize kubeconfig",
-		}, err)
+		logHandler.Handle(logger.ErrInitKubeconfig, err)
 		return
 	}
 
@@ -165,16 +162,10 @@ func promptForContextInfo(opts *utils.KubeConfigOptions) contextDefinition {
 	err := survey.Ask(prompt, &answers)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			logHandler.Handle(logger.ErrorType{
-				Level:   logger.Info,
-				Message: "Alright then, keep your secrets! Exiting..",
-			}, nil)
+			logHandler.Handle(logger.ErrUserInterrupt, nil)
 			return contextDefinition{}
 		} else {
-			logHandler.Handle(logger.ErrorType{
-				Level:   logger.Error,
-				Message: "Failed to get context information",
-			}, err)
+			logHandler.Handle(logger.ErrPromptFailed, err)
 			return contextDefinition{}
 		}
 	}

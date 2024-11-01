@@ -79,10 +79,7 @@ func selectContextToDelete(opts *utils.KubeConfigOptions) string {
 	// If a context was given as an argument, check if it exists in the kubeconfig
 	if context != "" {
 		if !slices.Contains(opts.Contexts, context) {
-			logHandler.Handle(logger.ErrorType{
-				Level:   logger.Error,
-				Message: fmt.Sprintf("Could not find context in kubeconfig file! Found the following contexts: %q", opts.Contexts),
-			}, fmt.Errorf("context not found in kubeconfig"))
+			logHandler.Handle(logger.ErrContextNotFound, fmt.Errorf("context not found in kubeconfig"), opts.Contexts)
 			return ""
 		}
 		return context
@@ -97,17 +94,11 @@ func selectContextToDelete(opts *utils.KubeConfigOptions) string {
 	err := survey.AskOne(prompt, &context)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			logHandler.Handle(logger.ErrorType{
-				Level:   logger.Info,
-				Message: "Alright then, keep your secrets! Exiting..",
-			}, nil)
+			logHandler.Handle(logger.ErrUserInterrupt, nil)
 			os.Exit(1)
 			return ""
 		} else {
-			logHandler.Handle(logger.ErrorType{
-				Level:   logger.Error,
-				Message: "Error selecting context",
-			}, err)
+			logHandler.Handle(logger.ErrSelectContext, err)
 			return ""
 		}
 	}
