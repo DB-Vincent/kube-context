@@ -26,6 +26,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/DB-Vincent/kube-context/pkg/utils"
+	"github.com/DB-Vincent/kube-context/pkg/logger"
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -50,38 +51,41 @@ func runDeleteCommand(cmd *cobra.Command, args []string) {
 	configAccess := clientcmd.NewDefaultPathOptions()
 
 	// Prompt the user to select a context to delete
-	contextToDelete, err := selectContextToDelete(opts)
-	if err != nil {
-		fmt.Printf("Error selecting context to delete: %s", err)
+	contextToDelete := selectContextToDelete(opts)
+	if contextToDelete == "" {
 		return
 	}
 
 	// Remove selected context from kubeconfig
-	err = deleteContext(opts, contextToDelete)
-	if err != nil {
-		fmt.Printf("Error deleting context: %s", err)
-		return
-	}
+	deleteContext(opts, contextToDelete)
 
 	// Write modified configuration to kubeconfig file
-	err = clientcmd.ModifyConfig(configAccess, *opts.Config, true)
+	err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
 	if err != nil {
-		fmt.Printf("Error updating kubeconfig file: %s", err)
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "Error updating kubeconfig file",
+		}, err)
 		return
 	}
 
-	fmt.Printf("✔ Successfully deleted context %s!\n", color.FgCyan.Render(contextToDelete))
+	logHandler.Handle(logger.ErrorType{
+		Level:   logger.Info,
+		Message: fmt.Sprintf("Successfully deleted context %s!", color.FgCyan.Render(contextToDelete)),
+	}, nil)
 }
 
-func selectContextToDelete(opts *utils.KubeConfigOptions) (string, error) {
+func selectContextToDelete(opts *utils.KubeConfigOptions) string {
 	// If a context was given as an argument, check if it exists in the kubeconfig
 	if context != "" {
 		if !slices.Contains(opts.Contexts, context) {
-			fmt.Printf("❌ Could not find context in kubeconfig file!\n")
-			fmt.Printf("ℹ Found the following contexts in your kubeconfig file: %q\n", opts.Contexts)
-			return "", fmt.Errorf("context not found in kubeconfig")
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Error,
+				Message: fmt.Sprintf("Could not find context in kubeconfig file! Found the following contexts: %q", opts.Contexts),
+			}, fmt.Errorf("context not found in kubeconfig"))
+			return ""
 		}
-		return context, nil
+		return context
 	}
 
 	// No context was given, set up a prompt to interactively select context
@@ -93,19 +97,29 @@ func selectContextToDelete(opts *utils.KubeConfigOptions) (string, error) {
 	err := survey.AskOne(prompt, &context)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Info,
+				Message: "Alright then, keep your secrets! Exiting..",
+			}, nil)
 			os.Exit(1)
-			return "", nil
+			return ""
 		} else {
-			return "", fmt.Errorf("error selecting context: %s", err)
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Error,
+				Message: "Error selecting context",
+			}, err)
+			return ""
 		}
 	}
 
-	return context, nil
+	return context
 }
 
-func deleteContext(opts *utils.KubeConfigOptions, contextToDelete string) error {
-	fmt.Printf("ℹ Deleting context %s from kubeconfig file..\n", color.FgCyan.Render(contextToDelete))
+func deleteContext(opts *utils.KubeConfigOptions, contextToDelete string) {
+	logHandler.Handle(logger.ErrorType{
+		Level:   logger.Info,
+		Message: fmt.Sprintf("Deleting context %s from kubeconfig file..", color.FgCyan.Render(contextToDelete)),
+	}, nil)
 
 	// Remove context from context list in configuration struct
 	delete(opts.Config.Contexts, contextToDelete)
@@ -113,11 +127,12 @@ func deleteContext(opts *utils.KubeConfigOptions, contextToDelete string) error 
 	// Change current context to first context in list if current context is deleted
 	if opts.CurrentContext == contextToDelete {
 		firstContext := getFirstContext(opts.Config.Contexts)
-		fmt.Printf("ℹ You're currently using the context you want to delete, I'll switch you to the %s context..\n", color.FgCyan.Render(firstContext))
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Info,
+			Message: fmt.Sprintf("You're currently using the context you want to delete, I'll switch you to the %s context..", color.FgCyan.Render(firstContext)),
+		}, nil)
 		opts.Config.CurrentContext = firstContext
 	}
-
-	return nil
 }
 
 func getFirstContext(contexts map[string]*api.Context) string {
