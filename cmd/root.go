@@ -20,7 +20,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"slices"
@@ -67,9 +66,11 @@ func SetVersionInfo(version, commit, date string) {
 func ContextSwitcher(cmd *cobra.Command, args []string) {
 	// Initialize configuration struct
 	opts := &utils.KubeConfigOptions{}
-	err := opts.Init(kubeConfigPath)
-	if err != nil {
-		fmt.Printf("%v\n", err)
+	if err := opts.Init(kubeConfigPath); err != nil {
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "Failed to initialize configuration",
+		}, err)
 		return
 	}
 
@@ -79,15 +80,16 @@ func ContextSwitcher(cmd *cobra.Command, args []string) {
 
 	// If no context was given, create an interactive prompt
 	if context == "" {
-		err := promptForContext(opts, &context)
-		if err != nil {
-			fmt.Printf("%v\n", err)
+		promptForContext(opts, &context)
+		if context == "" {
 			return
 		}
 	} else { // Context argument was given, check if it exists in the kubeconfig file
 		if !slices.Contains(opts.Contexts, context) {
-			fmt.Printf("❌ Could not find context in kubeconfig file!\n")
-			fmt.Printf("ℹ Found the following contexts in your kubeconfig file: %q\n", opts.Contexts)
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Error,
+				Message: fmt.Sprintf("Could not find context in kubeconfig file! Found the following contexts: %q", opts.Contexts),
+			}, fmt.Errorf("context not found"))
 			return
 		}
 	}
@@ -96,7 +98,7 @@ func ContextSwitcher(cmd *cobra.Command, args []string) {
 	switchContext(opts, configAccess, context)
 }
 
-func promptForContext(opts *utils.KubeConfigOptions, context *string) error {
+func promptForContext(opts *utils.KubeConfigOptions, context *string) {
 	// Set up an interactive prompt to select a context
 	prompt := &survey.Select{
 		Message: "Choose a context:",
@@ -106,13 +108,19 @@ func promptForContext(opts *utils.KubeConfigOptions, context *string) error {
 	err := survey.AskOne(prompt, context)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			return fmt.Errorf("ℹ Alright then, keep your secrets! Exiting..")
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Info,
+				Message: "Alright then, keep your secrets! Exiting..",
+			}, nil)
+			*context = ""
 		} else {
-			return fmt.Errorf("%s", err)
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Error,
+				Message: "Failed to prompt for context",
+			}, err)
+			*context = ""
 		}
 	}
-
-	return nil
 }
 
 func switchContext(opts *utils.KubeConfigOptions, configAccess clientcmd.ConfigAccess, context string) {
@@ -122,14 +130,23 @@ func switchContext(opts *utils.KubeConfigOptions, configAccess clientcmd.ConfigA
 		opts.Config.CurrentContext = context
 
 		// Write modified configuration to file
-		err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
-		if err != nil {
-			log.Fatalf("Error modifying config: %s", err)
+		if err := clientcmd.ModifyConfig(configAccess, *opts.Config, true); err != nil {
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Error,
+				Message: "Failed to modify kubeconfig",
+			}, err)
+			return
 		}
 
-		fmt.Printf("✔ Switched to %s!\n", color.FgCyan.Render(context))
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Info,
+			Message: fmt.Sprintf("Switched to %s!", color.FgCyan.Render(context)),
+		}, nil)
 	} else {
-		fmt.Printf("⚠ You were already working on %s, no need to change.\n", color.FgCyan.Render(context))
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Info,
+			Message: fmt.Sprintf("You were already working on %s, no need to change.", color.FgCyan.Render(context)),
+		}, nil)
 	}
 }
 
@@ -141,12 +158,15 @@ func Execute() {
 	}
 }
 
-
 // Cobra command initialization
 func init() {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatal(err)
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "Failed to get user home directory",
+		}, err)
+		os.Exit(1)
 	}
 
 	rootCmd.Flags().StringVarP(&context, "context", "c", "", "name of context to which you want to switch")
