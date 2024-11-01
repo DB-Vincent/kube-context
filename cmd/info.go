@@ -23,6 +23,7 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/DB-Vincent/kube-context/pkg/utils"
+	"github.com/DB-Vincent/kube-context/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -40,41 +41,44 @@ func runInfoCommand(cmd *cobra.Command, args []string) {
 	opts.Init(kubeConfigPath)
 
 	// Retrieves info and displays it to the user
-	err := retrieveAndDisplayInfo(opts)
-	if err != nil {
-		fmt.Printf("Error retrieving and displaying information: %s", err)
-		return
-	}
+	retrieveAndDisplayInfo(opts)
 }
 
-func retrieveAndDisplayInfo(opts *utils.KubeConfigOptions) error {
+func retrieveAndDisplayInfo(opts *utils.KubeConfigOptions) {
 	// Retrive cluster URL and make sure that connection works
 	clusterUrl, err := opts.GetClusterUrl()
 	if err != nil {
-		fmt.Printf("❌ An error occurred while connecting to the API endpoint!\nError: %s\n", err.Error())
-		return fmt.Errorf("error retrieving cluster URL: %s", err)
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "An error occurred while connecting to the API endpoint",
+		}, err)
 	}
 
 	// Retrieve namespaces
 	if err := opts.GetNamespaces(); err != nil {
-		return fmt.Errorf("error retrieving namespaces: %s", err)
+		logHandler.Handle(logger.ErrGetResource, err, "namespaces")
 	}
 
 	// Retrieve pods
 	if err := opts.GetPods(); err != nil {
-		return fmt.Errorf("error retrieving pods: %s", err)
+		logHandler.Handle(logger.ErrGetResource, err, "pods")
 	}
 
 	// Display retrieved information to the user
 	displayInfo(opts, clusterUrl)
-
-	return nil
 }
 
 func displayInfo(opts *utils.KubeConfigOptions, clusterUrl string) {
-	// Print the beautiful data
-	fmt.Printf("The %s cluster currently has %s pods spread over %s namespaces!\n", opts.Config.CurrentContext, color.FgCyan.Render(len(opts.Pods)), color.FgCyan.Render(len(opts.Namespaces)))
-	fmt.Printf("Connecting to this cluster can be done using the %s API endpoint.\n", color.FgCyan.Render(clusterUrl))
+	// Display cluster information
+	logHandler.Handle(logger.ErrorType{
+		Level:   logger.Info,
+		Message: fmt.Sprintf("The %s cluster currently has %s pods spread over %s namespaces!", opts.Config.CurrentContext, color.FgCyan.Render(len(opts.Pods)), color.FgCyan.Render(len(opts.Namespaces))),
+	}, nil)
+
+	logHandler.Handle(logger.ErrorType{
+		Level:   logger.Info,
+		Message: fmt.Sprintf("Connecting to this cluster can be done using the %s API endpoint.", color.FgCyan.Render(clusterUrl)),
+	}, nil)
 }
 
 // Cobra command initialization

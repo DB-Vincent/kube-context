@@ -52,7 +52,6 @@ var (
 		Level:   Info,
 		Message: "This is an info message",
 	}
-
 	ErrGetResource = ErrorType{
 		Level: Fatal,
 		Message: "Could not get %s resource(s) from Kubernetes cluster. Please verify that you have the correct permissions.",
