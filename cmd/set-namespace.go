@@ -20,12 +20,12 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"slices"
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/DB-Vincent/kube-context/pkg/utils"
+	"github.com/DB-Vincent/kube-context/pkg/logger"
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -52,89 +52,110 @@ func runSetNamespaceCommand(cmd *cobra.Command, args []string) {
 	configAccess := clientcmd.NewDefaultPathOptions()
 
 	// Retrieve namespace to set as default
-	selectedNamespace, err := selectNamespace(opts)
-	if err != nil {
-		log.Fatalf("Error selecting namespace: %s", err)
+	selectedNamespace := selectNamespace(opts)
+	if selectedNamespace == "" {
+		return
 	}
 
 	// Sets the namespace
-	err = setNamespace(opts, configAccess, selectedNamespace)
-	if err != nil {
-		log.Fatalf("Error setting default namespace: %s", err)
-	}
+	setNamespace(opts, configAccess, selectedNamespace)
 }
 
-func selectNamespace(opts *utils.KubeConfigOptions) (string, error) {
+func selectNamespace(opts *utils.KubeConfigOptions) string {
 	// Retrieve cluster URL, ensuring that we have connection to the cluster
 	_, err := opts.GetClusterUrl()
 	if err != nil {
-		return "", fmt.Errorf("error connecting to the API endpoint: %s", err)
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "Failed to connect to the API endpoint",
+		}, err)
+		return ""
 	}
 
 	// Retrieve namespaces in cluster
-	err = opts.GetNamespaces()
-	if err != nil {
-		return "", fmt.Errorf("error retrieving namespaces: %s", err)
+	if err := opts.GetNamespaces(); err != nil {
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "Failed to retrieve namespaces",
+		}, err)
+		return ""
 	}
 
 	selectedNamespace := ""
 
 	// If no namespace was given, prompt the user to interactively select one
 	if namespace == "" {
-		err = promptForNamespace(opts, &selectedNamespace)
-		if err != nil {
-			return "", fmt.Errorf("error prompting for namespace: %s", err)
+		selectedNamespace = promptForNamespace(opts)
+		if selectedNamespace == "" {
+			return ""
 		}
 	} else { // namespace was given as an argument, verify that it exists in the cluster
 		if !slices.Contains(opts.Namespaces, namespace) {
-			fmt.Printf("❌ Could not find namespace in cluster!\n")
-			fmt.Printf("ℹ Found the following namespaces in your current cluster: %q\n", opts.Namespaces)
-			return "", fmt.Errorf("namespace not found in cluster")
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Error,
+				Message: fmt.Sprintf("Could not find namespace in cluster! Found the following namespaces in your current cluster: %q", opts.Namespaces),
+			}, fmt.Errorf("namespace not found in cluster"))
+			return ""
 		}
 
 		selectedNamespace = namespace
 	}
 
-	return selectedNamespace, nil
+	return selectedNamespace
 }
 
-func promptForNamespace(opts *utils.KubeConfigOptions, result *string) error {
+func promptForNamespace(opts *utils.KubeConfigOptions) string {
+	result := ""
+
 	// Set up a prompt to interactively select a namespace
 	prompt := &survey.Select{
 		Message: fmt.Sprintf("Choose a default namespace for the %s context:", opts.CurrentContext),
 		Options: opts.Namespaces,
 	}
 
-	err := survey.AskOne(prompt, result)
+	err := survey.AskOne(prompt, &result)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			fmt.Printf("ℹ Alright then, keep your secrets! Exiting..\n")
-			return nil
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Info,
+				Message: "Alright then, keep your secrets! Exiting..",
+			}, nil)
+			return ""
 		} else {
-			return fmt.Errorf("error prompting for namespace: %s", err)
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Error,
+				Message: "Failed to prompt for namespace",
+			}, err)
+			return ""
 		}
 	}
 
-	return nil
+	return result
 }
 
-
-func setNamespace(opts *utils.KubeConfigOptions, configAccess clientcmd.ConfigAccess, selectedNamespace string) error {
-	fmt.Printf("ℹ Setting the default namespace to %s..\n", color.FgCyan.Render(selectedNamespace))
+func setNamespace(opts *utils.KubeConfigOptions, configAccess clientcmd.ConfigAccess, selectedNamespace string) {
+	logHandler.Handle(logger.ErrorType{
+		Level:   logger.Info,
+		Message: fmt.Sprintf("Setting the default namespace to %s..", color.FgCyan.Render(selectedNamespace)),
+	}, nil)
 
 	// Set namespace parameter for current context
 	context, _ := opts.Config.Contexts[opts.CurrentContext]
 	context.Namespace = selectedNamespace
 
 	// Write modified configuration to kubeconfig
-	err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
-	if err != nil {
-		return fmt.Errorf("error modifying config: %s", err)
+	if err := clientcmd.ModifyConfig(configAccess, *opts.Config, true); err != nil {
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "Failed to modify kubeconfig",
+		}, err)
+		return
 	}
 
-	fmt.Printf("✔ Successfully set the default namespace for %s to %s!\n", color.FgCyan.Render(opts.CurrentContext), color.FgCyan.Render(selectedNamespace))
-
-	return nil
+	logHandler.Handle(logger.ErrorType{
+		Level:   logger.Info,
+		Message: fmt.Sprintf("Successfully set the default namespace for %s to %s!", color.FgCyan.Render(opts.CurrentContext), color.FgCyan.Render(selectedNamespace)),
+	}, nil)
 }
 
 // Cobra command initialization
