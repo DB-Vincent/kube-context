@@ -103,7 +103,7 @@ func promptForContext(opts *utils.KubeConfigOptions, context *string) {
 	err := survey.AskOne(prompt, context)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted"))
+			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted context swwitch"))
     	os.Exit(0)
 			*context = ""
 		} else {
