@@ -36,22 +36,6 @@ type ErrorType struct {
 
 // Common error types
 var (
-	ErrFatal = ErrorType{
-		Level:   Fatal,
-		Message: "This is a fatal error",
-	}
-	ErrError = ErrorType{
-		Level:   Error,
-		Message: "This is an error",
-	}
-	ErrWarning = ErrorType{
-		Level:   Warning,
-		Message: "This is a warning",
-	}
-	ErrInfo = ErrorType{
-		Level:   Info,
-		Message: "This is an info message",
-	}
 	ErrGetResource = ErrorType{
 		Level: Fatal,
 		Message: "Could not get %s resource(s) from Kubernetes cluster. Please verify that you have the correct permissions.",

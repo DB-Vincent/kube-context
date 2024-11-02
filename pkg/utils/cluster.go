@@ -44,7 +44,7 @@ func (opts *KubeConfigOptions) GetNamespaces() {
 func (opts *KubeConfigOptions) GetPods() {
 	podList, err := opts.Client.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		logHandler.Handle(logger.ErrGetResource, err, "pods")
+		logHandler.Handle(logger.ErrGetResource, err, "pod")
 	}
 
 	for _, pod := range podList.Items {
@@ -61,14 +61,14 @@ func (opts *KubeConfigOptions) GetClusterUrl() string {
 
 	response, err := http.Get(connectionURL)
 	if err != nil {
-		logHandler.Handle(logger.ErrGetResource, err)
+		logHandler.Handle(logger.ErrAPIEndpoint, err)
 		return ""
 	}
 
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusUnauthorized {
-		logHandler.Handle(logger.ErrGetResource, errors.New("did not receive expected \"401\" HTTP status code"))
+		logHandler.Handle(logger.ErrAPIEndpoint, errors.New("did not receive expected \"401\" HTTP status code"))
 		return ""
 	}
 
