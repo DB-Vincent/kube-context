@@ -67,13 +67,7 @@ func SetVersionInfo(version, commit, date string) {
 func ContextSwitcher(cmd *cobra.Command, args []string) {
 	// Initialize configuration struct
 	opts := &utils.KubeConfigOptions{}
-	if err := opts.Init(kubeConfigPath); err != nil {
-		logHandler.Handle(logger.ErrorType{
-			Level:   logger.Error,
-			Message: "Failed to initialize configuration",
-		}, err)
-		return
-	}
+	opts.Init(kubeConfigPath)
 
 	// Retrieve contexts and set up configAccess so we can write the adjusted configuration
 	opts.GetContexts()

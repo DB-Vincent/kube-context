@@ -20,11 +20,11 @@ package utils
 
 import (
 	"os"
-	"fmt"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	api "k8s.io/client-go/tools/clientcmd/api"
+	"github.com/DB-Vincent/kube-context/pkg/logger"
 )
 
 type KubeConfigOptions struct {
@@ -37,62 +37,55 @@ type KubeConfigOptions struct {
 	Client *kubernetes.Clientset
 }
 
-func (opts *KubeConfigOptions) Init(kubeConfigPath string) error {
-	var err error
-
+func (opts *KubeConfigOptions) Init(kubeConfigPath string) {
 	// Load kube config file
+	var err error
 	opts.Config, err = clientcmd.LoadFromFile(kubeConfigPath)
 	if err != nil {
-		return err
+		logHandler.Handle(logger.ErrInitKubeconfig, err)
+		return
 	}
 
 	// Build client-usable configuration from file
 	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 	if err != nil {
-		return err
+		logHandler.Handle(logger.ErrAPIEndpoint, err)
+		return
 	}
 
 	// Create client from previously retrieved configuration
 	opts.Client, err = kubernetes.NewForConfig(config)
 	if err != nil {
-		return err
+		logHandler.Handle(logger.ErrAPIEndpoint, err)
+		return
 	}
-
-	return nil
 }
 
-func (opts *KubeConfigOptions) InitOrCreate(kubeConfigPath string) error {
-	var err error
-
-	_, err = os.Stat(kubeConfigPath)
+func (opts *KubeConfigOptions) InitOrCreate(kubeConfigPath string) {
+	_, err := os.Stat(kubeConfigPath)
 	if os.IsNotExist(err) {
 		// If kubeconfig file doesn't exist, create an empty config
 		opts.Config = &api.Config{
 			APIVersion: "v1",
 			Kind:       "Config",
-			Contexts: map[string]*api.Context{},
-			AuthInfos: map[string]*api.AuthInfo{},
-			Clusters: map[string]*api.Cluster{},
+			Contexts:   map[string]*api.Context{},
+			AuthInfos:  map[string]*api.AuthInfo{},
+			Clusters:   map[string]*api.Cluster{},
 		}
 
 		// No Kubeconfig was present, so we create one with the new data
 		err := clientcmd.WriteToFile(*opts.Config, kubeConfigPath)
 		if err != nil {
-			return err
+			logHandler.Handle(logger.ErrWriteKubeconfig, err)
+			return
 		}
 	} else if err != nil {
-		// Error occurred while checking kubeconfig existence
-		fmt.Printf("%v\n", err)
-		return err
+		logHandler.Handle(logger.ErrInitKubeconfig, err)
+		return
 	} else {
 		// Load kubeconfig from file
-		err := opts.Init(kubeConfigPath)
-		if err != nil {
-			fmt.Printf("%s", err)
-		}
+		opts.Init(kubeConfigPath)
 	}
-
-	return nil
 }
 
 func (opts *KubeConfigOptions) GetContexts() {

@@ -53,10 +53,7 @@ type contextDefinition struct {
 func runAddCommand(cmd *cobra.Command, args []string) {
 	// Initialize configuration struct
 	opts := &utils.KubeConfigOptions{}
-	if err := opts.InitOrCreate(kubeConfigPath); err != nil {
-		logHandler.Handle(logger.ErrInitKubeconfig, err)
-		return
-	}
+	opts.InitOrCreate(kubeConfigPath)
 
 	// Retrieve the context information from the user
 	answers := promptForContextInfo(opts)
