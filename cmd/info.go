@@ -46,20 +46,13 @@ func runInfoCommand(cmd *cobra.Command, args []string) {
 
 func retrieveAndDisplayInfo(opts *utils.KubeConfigOptions) {
 	// Retrive cluster URL and make sure that connection works
-	clusterUrl, err := opts.GetClusterUrl()
-	if err != nil {
-		logHandler.Handle(logger.ErrAPIEndpoint, err)
-	}
+	clusterUrl := opts.GetClusterUrl()
 
 	// Retrieve namespaces
-	if err := opts.GetNamespaces(); err != nil {
-		logHandler.Handle(logger.ErrGetResource, err, "namespaces")
-	}
+	opts.GetNamespaces()
 
 	// Retrieve pods
-	if err := opts.GetPods(); err != nil {
-		logHandler.Handle(logger.ErrGetResource, err, "pods")
-	}
+	opts.GetPods()
 
 	// Display retrieved information to the user
 	displayInfo(opts, clusterUrl)

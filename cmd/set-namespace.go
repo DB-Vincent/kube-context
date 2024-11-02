@@ -65,23 +65,10 @@ func runSetNamespaceCommand(cmd *cobra.Command, args []string) {
 
 func selectNamespace(opts *utils.KubeConfigOptions) string {
 	// Retrieve cluster URL, ensuring that we have connection to the cluster
-	_, err := opts.GetClusterUrl()
-	if err != nil {
-		logHandler.Handle(logger.ErrorType{
-			Level:   logger.Error,
-			Message: "Failed to connect to the API endpoint",
-		}, err)
-		return ""
-	}
+	opts.GetClusterUrl()
 
 	// Retrieve namespaces in cluster
-	if err := opts.GetNamespaces(); err != nil {
-		logHandler.Handle(logger.ErrorType{
-			Level:   logger.Error,
-			Message: "Failed to retrieve namespaces",
-		}, err)
-		return ""
-	}
+	opts.GetNamespaces()
 
 	selectedNamespace := ""
 

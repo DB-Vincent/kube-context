@@ -22,7 +22,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"net/http"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,36 +29,31 @@ import (
 )
 
 // GetNamespaces retrieves a list of namespaces in the current cluster.
-func (opts *KubeConfigOptions) GetNamespaces() error {
+func (opts *KubeConfigOptions) GetNamespaces() {
 	namespaceList, err := opts.Client.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		logHandler.Handle(logger.ErrGetResource, err, "namespace")
-		return fmt.Errorf("failed to get namespaces: %v", err)
 	}
 
 	for _, n := range namespaceList.Items {
 		opts.Namespaces = append(opts.Namespaces, n.Name)
 	}
-
-	return nil
 }
 
 // GetPods retrieves a list of pods in the current cluster.
-func (opts *KubeConfigOptions) GetPods() error {
+func (opts *KubeConfigOptions) GetPods() {
 	podList, err := opts.Client.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to get pods: %v", err)
+		logHandler.Handle(logger.ErrGetResource, err, "pods")
 	}
 
 	for _, pod := range podList.Items {
 		opts.Pods = append(opts.Pods, pod.Name)
 	}
-
-	return nil
 }
 
 // GetClusterUrl retrieves the connection URL of the current cluster and tests connectivity.
-func (opts *KubeConfigOptions) GetClusterUrl() (string, error) {
+func (opts *KubeConfigOptions) GetClusterUrl() string {
 	currentClusterName := opts.Config.Contexts[opts.Config.CurrentContext].Cluster
 	connectionURL := opts.Config.Clusters[currentClusterName].Server
 
@@ -67,14 +61,16 @@ func (opts *KubeConfigOptions) GetClusterUrl() (string, error) {
 
 	response, err := http.Get(connectionURL)
 	if err != nil {
-		return "", fmt.Errorf("failed to connect to the API endpoint: %v", err)
+		logHandler.Handle(logger.ErrGetResource, err)
+		return ""
 	}
 
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusUnauthorized {
-		return "", errors.New("did not receive expected \"401\" HTTP status code")
+		logHandler.Handle(logger.ErrGetResource, errors.New("did not receive expected \"401\" HTTP status code"))
+		return ""
 	}
 
-	return connectionURL, nil
+	return connectionURL
 }
