@@ -19,12 +19,15 @@
 package cmd
 
 import (
+	"os"
 	"fmt"
 	"slices"
+	"errors"
 
 	"github.com/gookit/color"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/DB-Vincent/kube-context/utils"
+	"github.com/DB-Vincent/kube-context/pkg/utils"
+	"github.com/DB-Vincent/kube-context/pkg/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -51,54 +54,48 @@ func runRenameCommand(cmd *cobra.Command, args []string) {
 	configAccess := clientcmd.NewDefaultPathOptions()
 
 	// Retrieve context inputs
-	err := validateAndSetContextNames(opts)
-	if err != nil {
-		fmt.Printf("Error validating and setting context names: %s", err)
-		return
-	}
+	validateAndSetContextNames(opts)
 
 	// Rename context
-	err = renameContext(opts, configAccess)
-	if err != nil {
-		fmt.Printf("Error renaming context: %s", err)
+	renameContext(opts, configAccess)
+}
+
+func validateAndSetContextNames(opts *utils.KubeConfigOptions) {
+	// No contexts were given as argument
+	if contextFrom == "" && contextTo == "" {
+		promptContextNames(opts)
 		return
 	}
 
-	fmt.Printf("✔ Successfully renamed %s context to %s!\n", color.FgCyan.Render(contextFrom), color.FgCyan.Render(contextTo))
-}
-
-func validateAndSetContextNames(opts *utils.KubeConfigOptions) error {
-	// No contexts were given as argument
-	if contextFrom == "" && contextTo == "" {
-		err := promptContextNames(opts)
-		if err != nil {
-			return fmt.Errorf("%v\n", err)
-		}
-	}
-	
 	if contextFrom == "" || contextTo == "" { // Either "from" or "to" was given, but not both
-		fmt.Printf("❌ Please enter both the name of the context you want to rename and the new name of the context. Use `kube-context rename --help` for more information.\n")
-		return fmt.Errorf("missing context names")
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "Please enter both the name of the context you want to rename and the new name of the context. Use `kube-context rename --help` for more information.",
+		}, fmt.Errorf("missing context names"))
+		return
 	}
 
 	// Verify that context to rename exists in kubeconfig
-	if !slices.Contains(opts.Contexts, contextFrom) { 
-		fmt.Printf("❌ Could not find the \"from\" context in kubeconfig file!\n")
-		fmt.Printf("ℹ Found the following contexts in your kubeconfig file: %q\n", opts.Contexts)
-		return fmt.Errorf("context not found in kubeconfig")
+	if !slices.Contains(opts.Contexts, contextFrom) {
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: fmt.Sprintf("Could not find the \"from\" context in kubeconfig file! Found the following contexts: %q", opts.Contexts),
+		}, fmt.Errorf("context not found in kubeconfig"))
+		return
 	}
 
 	// Verify that new name of context doesn't exist in kubeconfig
 	_, newExists := opts.Config.Contexts[contextTo]
 	if newExists {
-		fmt.Printf("❌ There's already a context with that name. Please give me a different name.\n")
-		return fmt.Errorf("new context name already exists")
+		logHandler.Handle(logger.ErrorType{
+			Level:   logger.Error,
+			Message: "There's already a context with that name. Please give me a different name.",
+		}, fmt.Errorf("new context name already exists"))
+		return
 	}
-
-	return nil
 }
 
-func promptContextNames(opts *utils.KubeConfigOptions) error {
+func promptContextNames(opts *utils.KubeConfigOptions) {
 	// Set up an interactive prompt to select a context and a new name
 	var qs = []*survey.Question{
 		{
@@ -123,20 +120,27 @@ func promptContextNames(opts *utils.KubeConfigOptions) error {
 	err := survey.Ask(qs, &answers)
 	if err != nil {
 		if err.Error() == "interrupt" {
-			return fmt.Errorf("ℹ Alright then, keep your secrets! Exiting..\n")
+			logHandler.Handle(logger.ErrUserInterrupt, errors.New("user interrupted context rename operation"))
+			os.Exit(0)
+			return
 		} else {
-			return fmt.Errorf("%s", err)
+			logHandler.Handle(logger.ErrorType{
+				Level:   logger.Error,
+				Message: "Failed to get context information",
+			}, err)
+			return
 		}
 	}
 
 	contextFrom = answers.OldContext
 	contextTo = answers.NewContext
-
-	return nil
 }
 
-func renameContext(opts *utils.KubeConfigOptions, configAccess clientcmd.ConfigAccess) error {
-	fmt.Printf("ℹ Renaming %s context to %s..\n", color.FgCyan.Render(contextFrom), color.FgCyan.Render(contextTo))
+func renameContext(opts *utils.KubeConfigOptions, configAccess clientcmd.ConfigAccess) {
+	logHandler.Handle(logger.ErrorType{
+		Level:   logger.Info,
+		Message: fmt.Sprintf("Renaming %s context to %s..", color.FgCyan.Render(contextFrom), color.FgCyan.Render(contextTo)),
+	}, nil)
 
 	// Get given context
 	context, _ := opts.Config.Contexts[contextFrom]
@@ -153,7 +157,16 @@ func renameContext(opts *utils.KubeConfigOptions, configAccess clientcmd.ConfigA
 	}
 
 	// Modify the kubeconfig to ensure that the changes persist
-	return clientcmd.ModifyConfig(configAccess, *opts.Config, true)
+	err := clientcmd.ModifyConfig(configAccess, *opts.Config, true)
+	if err != nil {
+		logHandler.Handle(logger.ErrWriteKubeconfig, err)
+		return
+	}
+
+	logHandler.Handle(logger.ErrorType{
+		Level:   logger.Info,
+		Message: fmt.Sprintf("Successfully renamed %s context to %s!", color.FgCyan.Render(contextFrom), color.FgCyan.Render(contextTo)),
+	}, nil)
 }
 
 // Cobra command initialization
@@ -162,4 +175,3 @@ func init() {
 	renameCmd.Flags().StringVarP(&contextFrom, "from", "f", "", "name of context which you want to rename")
 	renameCmd.Flags().StringVarP(&contextTo, "to", "t", "", "new name of the context")
 }
- 

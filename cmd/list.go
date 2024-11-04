@@ -22,7 +22,8 @@ import (
 	"fmt"
 
 	"github.com/gookit/color"
-	"github.com/DB-Vincent/kube-context/utils"
+	"github.com/DB-Vincent/kube-context/pkg/utils"
+	"github.com/DB-Vincent/kube-context/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +43,11 @@ func runListCommand(cmd *cobra.Command, args []string) {
 	// Retrieve contexts
 	opts.GetContexts()
 
-	fmt.Printf("You currently have %s context(s) configured:\n", color.FgCyan.Render(len(opts.Contexts)))
+	logHandler.Handle(logger.ErrorType{
+		Level:   logger.Info,
+		Message: fmt.Sprintf("You currently have %s context(s) configured:", color.FgCyan.Render(len(opts.Contexts))),
+	}, nil)
+
 	for _, context := range opts.Contexts {
 		fmt.Printf("- %s\n", color.FgCyan.Render(context))
 	}
